@@ -1,26 +1,74 @@
 @import "tailwindcss";
 
+/*
+  Theme tokens from UI-02-final-ui.md §1 — the exact colours from the
+  design mockup (public/Maths Exam Marking Tool.html). Do not invent new
+  colours; every value the app needs lives here.
+*/
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
+  --background: #fffaf3;
+  --card: #fff2db;
+  --card-strong: #ffe5bf;
+  --foreground: #2a2320;
+  --muted: #9a8c7c;
+  --muted-strong: #b49a80;
+  --eyebrow: #b07a4a;
+  --rubric-text: #a3917d;
+  --response-text: #3a322c;
+  --border: rgba(42, 35, 32, 0.06);
+  --hover-bg: #eceae6;
+  --accent: #d11a33;
+  --accent-hover: #b8142c;
+  --link-hover: #a8142a;
+  --dash: #c9b59c;
+  --max-text: #bcae9c;
+  --warning-bg: #fbeccb;
+  --warning-fg: #8a6400;
+  --warning-border: rgba(138, 100, 0, 0.28);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-hanken-grotesk);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  background: var(--background);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-hanken-grotesk), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+a:hover {
+  color: var(--link-hover);
+}
+
+@keyframes bar-stripe {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 28px 0;
+  }
+}
+
+@keyframes mark-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
