@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { gradingReducer, type Action, type GradingState, type QuestionResult } from "@/lib/state/GradingContext";
-import { getEffectiveMark, getNeedsReview, getStatus, getTotal } from "@/lib/state/selectors";
+import { getEffectiveFeedback, getEffectiveMark, getNeedsReview, getStatus, getTotal } from "@/lib/state/selectors";
 import { getStudentSubmission } from "@/lib/exam/loadExam";
 
 // Mirrors the reducer's INIT_EXAM case, without needing to render a
@@ -14,6 +14,7 @@ function initExam(submission: NonNullable<ReturnType<typeof getStudentSubmission
       aiFeedback: null,
       aiNeedsReview: false,
       humanMark: null,
+      humanFeedback: null,
     };
   }
   return questionResults;
@@ -34,6 +35,7 @@ function aiGradedQuestion(overrides: Partial<QuestionResult> = {}): QuestionResu
     aiFeedback: "Partial credit.",
     aiNeedsReview: true,
     humanMark: null,
+    humanFeedback: null,
     ...overrides,
   };
 }
@@ -99,7 +101,13 @@ describe("ADJUST", () => {
     const question = aiGradedQuestion({ maxMarks: 3, aiMark: 2 });
     const before = stateWith("Ben", question);
 
-    const after = dispatch(before, { type: "ADJUST", student: "Ben", questionId: "Q1", rawValue: "3" });
+    const after = dispatch(before, {
+      type: "ADJUST",
+      student: "Ben",
+      questionId: "Q1",
+      rawValue: "3",
+      feedback: "Partial credit.",
+    });
 
     const updated = after.results.Ben.Q1;
     expect(updated.humanMark).toBe(3);
@@ -111,7 +119,13 @@ describe("ADJUST", () => {
     const question = aiGradedQuestion({ maxMarks: 3 });
     const before = stateWith("Ben", question);
 
-    const after = dispatch(before, { type: "ADJUST", student: "Ben", questionId: "Q1", rawValue: "5" });
+    const after = dispatch(before, {
+      type: "ADJUST",
+      student: "Ben",
+      questionId: "Q1",
+      rawValue: "5",
+      feedback: "",
+    });
 
     expect(after.results.Ben.Q1.humanMark).toBe(3);
   });
@@ -120,7 +134,13 @@ describe("ADJUST", () => {
     const question = aiGradedQuestion({ maxMarks: 3 });
     const before = stateWith("Ben", question);
 
-    const after = dispatch(before, { type: "ADJUST", student: "Ben", questionId: "Q1", rawValue: "-1" });
+    const after = dispatch(before, {
+      type: "ADJUST",
+      student: "Ben",
+      questionId: "Q1",
+      rawValue: "-1",
+      feedback: "",
+    });
 
     expect(after.results.Ben.Q1.humanMark).toBe(0);
   });
@@ -129,7 +149,13 @@ describe("ADJUST", () => {
     const question = aiGradedQuestion();
     const before = stateWith("Ben", question);
 
-    const after = dispatch(before, { type: "ADJUST", student: "Ben", questionId: "Q1", rawValue });
+    const after = dispatch(before, {
+      type: "ADJUST",
+      student: "Ben",
+      questionId: "Q1",
+      rawValue,
+      feedback: "",
+    });
 
     expect(after).toEqual(before);
   });
@@ -138,7 +164,13 @@ describe("ADJUST", () => {
     const question = aiGradedQuestion({ status: "no_submission", aiMark: null, aiFeedback: null, aiNeedsReview: false });
     const before = stateWith("Ben", question);
 
-    const after = dispatch(before, { type: "ADJUST", student: "Ben", questionId: "Q1", rawValue: "2" });
+    const after = dispatch(before, {
+      type: "ADJUST",
+      student: "Ben",
+      questionId: "Q1",
+      rawValue: "2",
+      feedback: "",
+    });
 
     expect(after).toEqual(before);
     expect(getEffectiveMark(after.results.Ben.Q1)).toBe(0);
@@ -148,9 +180,77 @@ describe("ADJUST", () => {
     const question = aiGradedQuestion({ status: "adjusted", humanMark: 1, maxMarks: 3 });
     const before = stateWith("Ben", question);
 
-    const after = dispatch(before, { type: "ADJUST", student: "Ben", questionId: "Q1", rawValue: "3" });
+    const after = dispatch(before, {
+      type: "ADJUST",
+      student: "Ben",
+      questionId: "Q1",
+      rawValue: "3",
+      feedback: "Partial credit.",
+    });
 
     expect(after.results.Ben.Q1.humanMark).toBe(3);
+  });
+
+  it("sets humanFeedback from the tutor's edited text, trimmed, so getEffectiveFeedback reads it", () => {
+    const question = aiGradedQuestion({ aiFeedback: "Original AI feedback." });
+    const before = stateWith("Ben", question);
+
+    const after = dispatch(before, {
+      type: "ADJUST",
+      student: "Ben",
+      questionId: "Q1",
+      rawValue: "2",
+      feedback: "  Topped up by the tutor.  ",
+    });
+
+    expect(after.results.Ben.Q1.humanFeedback).toBe("Topped up by the tutor.");
+    expect(getEffectiveFeedback(after.results.Ben.Q1)).toBe("Topped up by the tutor.");
+    // The AI's original feedback is kept, not overwritten, same pattern as humanMark/aiMark.
+    expect(after.results.Ben.Q1.aiFeedback).toBe("Original AI feedback.");
+  });
+
+  it("does not adjust humanMark/status when the mark value is rejected, even with a feedback edit", () => {
+    const question = aiGradedQuestion({ aiFeedback: "Original." });
+    const before = stateWith("Ben", question);
+
+    const after = dispatch(before, {
+      type: "ADJUST",
+      student: "Ben",
+      questionId: "Q1",
+      rawValue: "abc",
+      feedback: "Should not be saved.",
+    });
+
+    expect(after).toEqual(before);
+  });
+});
+
+describe("CONFIRM_ALL", () => {
+  it("confirms every ai_graded question for the student, leaving others alone", () => {
+    const results: GradingState["results"] = {
+      Ben: {
+        Q1: aiGradedQuestion({ questionId: "Q1", status: "ai_graded" }),
+        Q2: aiGradedQuestion({ questionId: "Q2", status: "confirmed" }),
+        Q3: aiGradedQuestion({ questionId: "Q3", status: "adjusted", humanMark: 1 }),
+        Q4: aiGradedQuestion({ questionId: "Q4", status: "pending", aiMark: null, aiFeedback: null, aiNeedsReview: false }),
+      },
+    };
+    const before: GradingState = { results, gradingProgress: null };
+
+    const after = dispatch(before, { type: "CONFIRM_ALL", student: "Ben" });
+
+    expect(after.results.Ben.Q1.status).toBe("confirmed");
+    expect(after.results.Ben.Q2.status).toBe("confirmed");
+    expect(after.results.Ben.Q3.status).toBe("adjusted");
+    expect(after.results.Ben.Q4.status).toBe("pending");
+  });
+
+  it("does nothing for a student with no results yet", () => {
+    const before: GradingState = { results: {}, gradingProgress: null };
+
+    const after = dispatch(before, { type: "CONFIRM_ALL", student: "Ghost" });
+
+    expect(after).toEqual(before);
   });
 });
 

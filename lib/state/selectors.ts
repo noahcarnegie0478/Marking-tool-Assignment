@@ -14,6 +14,14 @@ export function getNeedsReview(question: QuestionResult): boolean {
   return question.aiNeedsReview && question.status === "ai_graded";
 }
 
+// The feedback that actually counts: the tutor's edited version if they
+// set one, otherwise the AI's, otherwise empty (not yet graded). The
+// feedback block should always read this, never aiFeedback/humanFeedback
+// directly. Same pattern as getEffectiveMark.
+export function getEffectiveFeedback(question: QuestionResult): string {
+  return question.humanFeedback ?? question.aiFeedback ?? "";
+}
+
 // "Marked" once every question for this student is either no_submission,
 // or has gone through AI grading (ai_graded, confirmed, or adjusted). A
 // student we have not opened yet (not in `results`) is "Not marked".

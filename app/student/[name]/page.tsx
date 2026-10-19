@@ -75,6 +75,14 @@ function StudentPageContent() {
     gradeStudent(name, Object.values(questionResults), dispatch);
   }
 
+  function handleConfirmAll() {
+    dispatch({ type: "CONFIRM_ALL", student: name });
+  }
+
+  const hasAiGradedQuestion = Boolean(
+    questionResults && Object.values(questionResults).some((question) => question.status === "ai_graded")
+  );
+
   const avatar = studentAvatarColors(name);
 
   return (
@@ -230,6 +238,24 @@ function StudentPageContent() {
                     >
                       Return
                     </Link>
+                    {hasAiGradedQuestion && (
+                      <button
+                        type="button"
+                        onClick={handleConfirmAll}
+                        className="cursor-pointer border-none hover:brightness-95"
+                        style={{
+                          background: "var(--marked-bg)",
+                          color: "var(--marked-fg)",
+                          fontSize: "15px",
+                          fontWeight: 700,
+                          padding: "12px 22px",
+                          borderRadius: "8px",
+                          transition: "filter 0.15s ease",
+                        }}
+                      >
+                        Confirm all
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={handleGradeWithAi}

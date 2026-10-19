@@ -16,6 +16,7 @@ function initExam(submission: NonNullable<ReturnType<typeof getStudentSubmission
       aiFeedback: null,
       aiNeedsReview: false,
       humanMark: null,
+      humanFeedback: null,
     };
   }
   return questionResults;

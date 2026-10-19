@@ -11,15 +11,18 @@ import { parseAdjustMark } from "@/lib/domain/parseAdjustMark";
 export function AdjustControl({
   currentMark,
   maxMarks,
+  currentFeedback,
   onSubmit,
   onCancel,
 }: {
   currentMark: number;
   maxMarks: number;
-  onSubmit: (mark: number) => void;
+  currentFeedback: string;
+  onSubmit: (mark: number, feedback: string) => void;
   onCancel: () => void;
 }) {
   const [rawValue, setRawValue] = useState(String(currentMark));
+  const [feedbackValue, setFeedbackValue] = useState(currentFeedback);
   const [error, setError] = useState<string | null>(null);
 
   function handleSave() {
@@ -28,11 +31,29 @@ export function AdjustControl({
       setError(`Enter a whole number from 0 to ${maxMarks}.`);
       return;
     }
-    onSubmit(parsed.mark);
+    onSubmit(parsed.mark, feedbackValue);
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+      <textarea
+        value={feedbackValue}
+        onChange={(event) => setFeedbackValue(event.target.value)}
+        aria-label="Feedback"
+        rows={3}
+        style={{
+          width: "100%",
+          padding: "10px 12px",
+          fontSize: "14px",
+          fontFamily: "inherit",
+          lineHeight: 1.5,
+          color: "var(--foreground)",
+          background: "var(--background)",
+          border: "1px solid rgba(16,24,40,0.12)",
+          borderRadius: "6px",
+          resize: "vertical",
+        }}
+      />
       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
         <input
           type="number"

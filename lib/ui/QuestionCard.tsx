@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { GradingDispatch, QuestionResult } from "@/lib/state/GradingContext";
-import { getEffectiveMark, getNeedsReview } from "@/lib/state/selectors";
+import { getEffectiveFeedback, getEffectiveMark, getNeedsReview } from "@/lib/state/selectors";
 import { redoQuestion } from "@/lib/state/redoQuestion";
 import { AdjustControl } from "@/lib/ui/AdjustControl";
 
@@ -27,14 +27,21 @@ export function QuestionCard({
   const needsReview = getNeedsReview(question);
   const showControls = GRADED_STATUSES.has(question.status);
   const effectiveMark = getEffectiveMark(question);
+  const effectiveFeedback = getEffectiveFeedback(question);
   const hasMark = showControls;
 
   function handleConfirm() {
     dispatch({ type: "CONFIRM", student, questionId: question.questionId });
   }
 
-  function handleAdjustSubmit(mark: number) {
-    dispatch({ type: "ADJUST", student, questionId: question.questionId, rawValue: String(mark) });
+  function handleAdjustSubmit(mark: number, feedback: string) {
+    dispatch({
+      type: "ADJUST",
+      student,
+      questionId: question.questionId,
+      rawValue: String(mark),
+      feedback,
+    });
     setIsAdjusting(false);
   }
 
@@ -182,7 +189,7 @@ export function QuestionCard({
         </div>
       </div>
 
-      {showControls && question.aiFeedback && (
+      {showControls && effectiveFeedback && (
         <div style={{ marginTop: "14px" }}>
           <SectionLabel>Feedback</SectionLabel>
           <div
@@ -196,7 +203,7 @@ export function QuestionCard({
               padding: "13px 16px",
             }}
           >
-            {question.aiFeedback}
+            {effectiveFeedback}
           </div>
         </div>
       )}
@@ -207,6 +214,7 @@ export function QuestionCard({
             <AdjustControl
               currentMark={effectiveMark}
               maxMarks={question.maxMarks}
+              currentFeedback={effectiveFeedback}
               onSubmit={handleAdjustSubmit}
               onCancel={() => setIsAdjusting(false)}
             />
@@ -215,8 +223,12 @@ export function QuestionCard({
               {/* Always shown on a graded card per the ticket's AC. Clicking
                   Confirm when already confirmed/adjusted is a safe no-op:
                   the CONFIRM reducer action only acts on "ai_graded". */}
-              <ControlButton onClick={handleConfirm}>Confirm</ControlButton>
-              <ControlButton onClick={() => setIsAdjusting(true)}>Adjust</ControlButton>
+              <ControlButton variant="confirm" onClick={handleConfirm}>
+                Confirm
+              </ControlButton>
+              <ControlButton variant="adjust" onClick={() => setIsAdjusting(true)}>
+                Adjust
+              </ControlButton>
               <ControlButton onClick={handleRedo}>Re-do</ControlButton>
             </div>
           )}
@@ -226,21 +238,38 @@ export function QuestionCard({
   );
 }
 
-function ControlButton({ onClick, children }: { onClick: () => void; children: string }) {
+// Confirm and Adjust reuse the same green/amber token pairs already in the
+// palette for the "Confirmed" chip and the "Needs review" badge, so a
+// tutor scanning the row sees the same colour meaning as the rest of the
+// card: green to lock a mark in, amber to flag it's being changed by hand.
+const VARIANT_STYLES = {
+  confirm: { background: "var(--marked-bg)", color: "var(--marked-fg)" },
+  adjust: { background: "var(--warning-bg)", color: "var(--warning-fg)" },
+  neutral: { background: "var(--card)", color: "var(--foreground)" },
+};
+
+export function ControlButton({
+  onClick,
+  children,
+  variant = "neutral",
+}: {
+  onClick: () => void;
+  children: string;
+  variant?: keyof typeof VARIANT_STYLES;
+}) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="cursor-pointer hover:bg-[var(--hover-bg)]"
+      className="cursor-pointer hover:brightness-95"
       style={{
-        background: "var(--card)",
-        color: "var(--foreground)",
-        border: "1px solid rgba(16,24,40,0.12)",
+        ...VARIANT_STYLES[variant],
+        border: variant === "neutral" ? "1px solid rgba(16,24,40,0.12)" : "1px solid transparent",
         fontSize: "13px",
         fontWeight: 700,
         padding: "6px 12px",
         borderRadius: "6px",
-        transition: "background 0.15s ease",
+        transition: "filter 0.15s ease",
       }}
     >
       {children}

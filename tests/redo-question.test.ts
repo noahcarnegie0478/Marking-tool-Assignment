@@ -20,6 +20,7 @@ function adjustedQuestion(): QuestionResult {
     aiFeedback: "old feedback",
     aiNeedsReview: true,
     humanMark: 3,
+    humanFeedback: "adjusted feedback",
   };
 }
 

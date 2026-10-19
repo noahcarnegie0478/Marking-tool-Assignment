@@ -22,6 +22,7 @@ function baseQuestion(overrides: Partial<QuestionResult> = {}): QuestionResult {
     aiFeedback: "Correct working.",
     aiNeedsReview: false,
     humanMark: null,
+    humanFeedback: null,
     ...overrides,
   };
 }
@@ -122,6 +123,7 @@ describe("QuestionCard thin UI tests", () => {
 
     fireEvent.click(screen.getByText("Adjust"));
     fireEvent.change(screen.getByLabelText("New mark"), { target: { value: "3" } });
+    fireEvent.change(screen.getByLabelText("Feedback"), { target: { value: "Topped up feedback." } });
     fireEvent.click(screen.getByText("Save"));
 
     expect(dispatch).toHaveBeenCalledWith({
@@ -129,18 +131,28 @@ describe("QuestionCard thin UI tests", () => {
       student: "Ben",
       questionId: "Q1",
       rawValue: "3",
+      feedback: "Topped up feedback.",
     });
 
     rerender(
       <QuestionCard
         student="Ben"
-        question={{ ...question, status: "adjusted", humanMark: 3 }}
+        question={{ ...question, status: "adjusted", humanMark: 3, humanFeedback: "Topped up feedback." }}
         dispatch={dispatch}
       />
     );
 
     expect(screen.getByText("Adjusted by tutor")).toBeTruthy();
     expect(screen.getByText("3")).toBeTruthy();
+    expect(screen.getByText("Topped up feedback.")).toBeTruthy();
+  });
+
+  it("the Adjust textarea starts pre-filled with the current effective feedback", () => {
+    render(<QuestionCard student="Ben" question={baseQuestion()} dispatch={vi.fn()} />);
+
+    fireEvent.click(screen.getByText("Adjust"));
+
+    expect((screen.getByLabelText("Feedback") as HTMLTextAreaElement).value).toBe("Correct working.");
   });
 
   it("re-doing a card shows the grading state, then the fresh mark and feedback", async () => {

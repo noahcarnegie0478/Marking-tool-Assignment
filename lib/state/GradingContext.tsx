@@ -16,6 +16,7 @@ export type QuestionResult = QuestionWithResponse & {
   aiFeedback: string | null;
   aiNeedsReview: boolean;
   humanMark: number | null;
+  humanFeedback: string | null;
 };
 
 export type GradingState = {
@@ -55,10 +56,15 @@ export type Action =
   | { type: "FINISH_GRADING"; student: string }
   // Tutor confirms an ai_graded question as-is.
   | { type: "CONFIRM"; student: string; questionId: string }
-  // Tutor types a new mark for a question. rawValue is the raw input
-  // text (not yet validated) so parseAdjustMark can reject a bad value
-  // with no state change, per invariant I1.
-  | { type: "ADJUST"; student: string; questionId: string; rawValue: string }
+  // Tutor confirms every ai_graded question for this student in one go.
+  // Questions already confirmed/adjusted, still pending, or with no
+  // submission are left alone.
+  | { type: "CONFIRM_ALL"; student: string }
+  // Tutor types a new mark and/or feedback for a question. rawValue is
+  // the raw mark input text (not yet validated) so parseAdjustMark can
+  // reject a bad value with no state change, per invariant I1. feedback
+  // is free text (the tutor's edited/topped-up version), no validation.
+  | { type: "ADJUST"; student: string; questionId: string; rawValue: string; feedback: string }
   // A single-question Re-do is starting: the question moves to
   // "grading" while a fresh AI call runs for just this one question.
   | { type: "START_REDO"; student: string; questionId: string };
@@ -82,6 +88,7 @@ export function gradingReducer(state: GradingState, action: Action): GradingStat
           aiFeedback: null,
           aiNeedsReview: false,
           humanMark: null,
+          humanFeedback: null,
         };
       }
       return {
@@ -136,6 +143,7 @@ export function gradingReducer(state: GradingState, action: Action): GradingStat
               aiFeedback: action.feedback,
               aiNeedsReview: action.needsReview,
               humanMark: null,
+              humanFeedback: null,
               status: "ai_graded",
             },
           },
@@ -169,6 +177,27 @@ export function gradingReducer(state: GradingState, action: Action): GradingStat
       };
     }
 
+    case "CONFIRM_ALL": {
+      const studentResults = state.results[action.student];
+      if (!studentResults) {
+        return state;
+      }
+
+      const updated: Record<string, QuestionResult> = {};
+      for (const [questionId, question] of Object.entries(studentResults)) {
+        updated[questionId] =
+          question.status === "ai_graded" ? { ...question, status: "confirmed" } : question;
+      }
+
+      return {
+        ...state,
+        results: {
+          ...state.results,
+          [action.student]: updated,
+        },
+      };
+    }
+
     case "ADJUST": {
       const question = state.results[action.student]?.[action.questionId];
       // A mark can only be adjusted once the AI has graded it (ai_graded,
@@ -197,6 +226,7 @@ export function gradingReducer(state: GradingState, action: Action): GradingStat
             [action.questionId]: {
               ...question,
               humanMark: parsed.mark,
+              humanFeedback: action.feedback.trim(),
               status: "adjusted",
             },
           },
