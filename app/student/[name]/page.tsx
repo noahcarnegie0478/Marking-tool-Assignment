@@ -4,10 +4,11 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { useGradingDispatch, useGradingState } from "@/lib/state/GradingContext";
-import { getNeedsReview, getStatus, getTotal } from "@/lib/state/selectors";
+import { getStatus, getTotal } from "@/lib/state/selectors";
 import { gradeStudent } from "@/lib/state/gradeStudent";
 import type { StudentSubmission } from "@/lib/exam/loadExam";
 import { studentAvatarColors, studentInitial } from "@/lib/ui/studentAvatar";
+import { QuestionCard } from "@/lib/ui/QuestionCard";
 
 // Screen 2: one student's 8 question cards. Loads the submission once and
 // drops it into the grading store (INIT_EXAM), then reads everything back
@@ -157,147 +158,14 @@ function StudentPageContent() {
             </div>
 
             <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
-              {Object.values(questionResults).map((question) => {
-                const isNoSubmission = question.status === "no_submission";
-                const hasMark = question.aiMark !== null;
-                const needsReview = getNeedsReview(question);
-
-                return (
-                  <li
-                    key={question.questionId}
-                    style={{
-                      background: isNoSubmission ? "#F6EEE0" : "var(--card)",
-                      border: needsReview
-                        ? `1px solid ${"var(--warning-border)"}`
-                        : "1px solid var(--border)",
-                      borderRadius: "10px",
-                      padding: "22px",
-                      marginBottom: "14px",
-                      boxShadow: "0 1px 2px rgba(78,52,30,0.04), 0 6px 18px rgba(78,52,30,0.045)",
-                      opacity: isNoSubmission ? 0.72 : 1,
-                      transition: "opacity 0.3s ease",
-                    }}
-                  >
-                    <div style={{ display: "flex", gap: "16px", alignItems: "flex-start" }}>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "10px",
-                            marginBottom: "8px",
-                            flexWrap: "wrap",
-                          }}
-                        >
-                          <span
-                            style={{
-                              fontSize: "12px",
-                              fontWeight: 800,
-                              letterSpacing: "0.06em",
-                              color: "var(--accent)",
-                              background: "#FCE4E3",
-                              padding: "3px 9px",
-                              borderRadius: "4px",
-                            }}
-                          >
-                            {question.questionId}
-                          </span>
-                          {needsReview && (
-                            <span
-                              style={{
-                                fontSize: "12px",
-                                fontWeight: 700,
-                                color: "var(--warning-fg)",
-                                background: "var(--warning-bg)",
-                                padding: "3px 10px",
-                                borderRadius: "4px",
-                              }}
-                            >
-                              ⚠ Needs review
-                            </span>
-                          )}
-                          {isNoSubmission && (
-                            <span
-                              style={{
-                                fontSize: "12px",
-                                fontWeight: 700,
-                                color: "var(--muted)",
-                                background: "#ECE4D8",
-                                padding: "3px 10px",
-                                borderRadius: "4px",
-                              }}
-                            >
-                              No submission
-                            </span>
-                          )}
-                        </div>
-                        <div
-                          style={{
-                            fontSize: "16.5px",
-                            fontWeight: 700,
-                            lineHeight: 1.4,
-                            color: isNoSubmission ? "#8E8172" : "var(--foreground)",
-                          }}
-                        >
-                          {question.question}
-                        </div>
-                      </div>
-
-                      <MarkBox
-                        noSub={isNoSubmission}
-                        hasMark={hasMark}
-                        mark={question.aiMark}
-                        maxMarks={question.maxMarks}
-                      />
-                    </div>
-
-                    <div style={{ marginTop: "14px" }}>
-                      <SectionLabel>Rubric</SectionLabel>
-                      <div style={{ fontSize: "13.5px", lineHeight: 1.5, color: "var(--rubric-text)" }}>
-                        {question.rubric}
-                      </div>
-                    </div>
-
-                    <div style={{ marginTop: "14px" }}>
-                      <SectionLabel>Response</SectionLabel>
-                      <div
-                        style={{
-                          fontSize: "15px",
-                          lineHeight: 1.55,
-                          color: isNoSubmission ? "#B4A590" : "var(--response-text)",
-                          background: isNoSubmission ? "transparent" : "#FFFAF3",
-                          border: "1px solid rgba(42,35,32,0.06)",
-                          borderRadius: "8px",
-                          padding: "13px 16px",
-                          fontStyle: isNoSubmission ? "italic" : "normal",
-                          whiteSpace: "pre-wrap",
-                        }}
-                      >
-                        {isNoSubmission ? "No response was submitted for this question." : question.response}
-                      </div>
-                    </div>
-
-                    {question.aiFeedback && (
-                      <div style={{ marginTop: "14px" }}>
-                        <SectionLabel>Feedback</SectionLabel>
-                        <div
-                          style={{
-                            fontSize: "14.5px",
-                            lineHeight: 1.55,
-                            color: "var(--response-text)",
-                            background: "#FFF7EA",
-                            border: "1px solid rgba(42,35,32,0.06)",
-                            borderRadius: "8px",
-                            padding: "13px 16px",
-                          }}
-                        >
-                          {question.aiFeedback}
-                        </div>
-                      </div>
-                    )}
-                  </li>
-                );
-              })}
+              {Object.values(questionResults).map((question) => (
+                <QuestionCard
+                  key={question.questionId}
+                  student={name}
+                  question={question}
+                  dispatch={dispatch}
+                />
+              ))}
             </ul>
 
             <div
@@ -387,69 +255,6 @@ function StudentPageContent() {
         )}
       </div>
     </main>
-  );
-}
-
-// The mark box: a dash before grading, the real mark once it lands. Keyed
-// by whether a mark is showing so React mounts a fresh node the moment a
-// mark first appears, which is what makes the `mark-in` CSS animation
-// (translateY + fade, defined in globals.css) actually play instead of
-// silently updating an existing node's text.
-function MarkBox({
-  noSub,
-  hasMark,
-  mark,
-  maxMarks,
-}: {
-  noSub: boolean;
-  hasMark: boolean;
-  mark: number | null;
-  maxMarks: number;
-}) {
-  const showMark = noSub || hasMark;
-  const markText = noSub ? "0" : hasMark ? String(mark) : "–";
-  const markColor = noSub ? "var(--dash)" : hasMark ? "var(--accent)" : "var(--dash)";
-
-  return (
-    <div
-      key={showMark ? "mark" : "dash"}
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: "1px",
-        minWidth: "74px",
-        padding: "10px 6px",
-        background: noSub ? "#EFE7D9" : "#FFFAF3",
-        border: "1px solid rgba(42,35,32,0.07)",
-        borderRadius: "8px",
-        flexShrink: 0,
-        animation: showMark && !noSub ? "mark-in 0.4s ease" : undefined,
-      }}
-    >
-      <span style={{ fontSize: "23px", fontWeight: 800, color: markColor, fontVariantNumeric: "tabular-nums" }}>
-        {markText}
-      </span>
-      <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--max-text)" }}>/ {maxMarks}</span>
-    </div>
-  );
-}
-
-function SectionLabel({ children }: { children: string }) {
-  return (
-    <div
-      style={{
-        fontSize: "11px",
-        fontWeight: 700,
-        letterSpacing: "0.08em",
-        color: "var(--muted-strong)",
-        textTransform: "uppercase",
-        marginBottom: "6px",
-      }}
-    >
-      {children}
-    </div>
   );
 }
 

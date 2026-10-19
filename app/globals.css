@@ -26,6 +26,8 @@
   --warning-bg: #fbeccb;
   --warning-fg: #8a6400;
   --warning-border: rgba(138, 100, 0, 0.28);
+  --marked-bg: #e6efe2;
+  --marked-fg: #4e7048;
 }
 
 @theme inline {
