@@ -5,9 +5,17 @@ import { ExamDataSchema, type Question } from "@/lib/validation/schemas";
 // If the file is malformed, fail loudly here instead of serving bad data.
 const examData = ExamDataSchema.parse(examDataRaw);
 
-// The statuses a question can be in before any grading exists.
-// A later ticket will add "grading" and "graded" when grading is built.
-export type QuestionStatus = "no_submission" | "pending";
+// The statuses a question can move through. A fresh submission is only
+// ever "no_submission" or "pending" (set below); "grading", "ai_graded",
+// "confirmed" and "adjusted" are set later by the grading loop and the
+// tutor's confirm/adjust/re-do actions (lib/state/GradingContext.tsx).
+export type QuestionStatus =
+  | "no_submission"
+  | "pending"
+  | "grading"
+  | "ai_graded"
+  | "confirmed"
+  | "adjusted";
 
 export type QuestionWithResponse = {
   questionId: string;

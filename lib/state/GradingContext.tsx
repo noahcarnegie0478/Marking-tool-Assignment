@@ -1,16 +1,21 @@
 "use client";
 
-import { createContext, useContext, useReducer, type ReactNode } from "react";
+import { createContext, useContext, useReducer, type Dispatch, type ReactNode } from "react";
 import type { QuestionWithResponse, StudentSubmission } from "@/lib/exam/loadExam";
+import { parseAdjustMark } from "@/lib/domain/parseAdjustMark";
 
 // One question's grading state. Starts life as the question + response data
 // we already loaded (status, response, maxMarks, ...), plus the grading
-// fields this ticket does not fill in yet (mark stays null until a later
-// ticket grades it).
+// fields. The AI's result is always kept in aiMark/aiFeedback/aiNeedsReview,
+// even after a tutor overrides it, so a later "was X, now Y" or a Re-do
+// always has the original to fall back to. humanMark is set only when the
+// tutor adjusts the mark; effectiveMark/needsReview (lib/state/selectors.ts)
+// are the derived values everything else should read.
 export type QuestionResult = QuestionWithResponse & {
-  mark: number | null;
-  feedback: string | null;
-  needsReview: boolean;
+  aiMark: number | null;
+  aiFeedback: string | null;
+  aiNeedsReview: boolean;
+  humanMark: number | null;
 };
 
 export type GradingState = {
