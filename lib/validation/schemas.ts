@@ -28,3 +28,27 @@ export const ExamDataSchema = z.object({
 export type Question = z.infer<typeof QuestionSchema>;
 export type StudentResponse = z.infer<typeof StudentResponseSchema>;
 export type ExamData = z.infer<typeof ExamDataSchema>;
+
+// What the client sends to /api/grade for one question. Matches
+// everything the real grading call (a later ticket) will need, so this
+// fake endpoint's contract is a drop-in match for the real one.
+export const GradeRequestSchema = z.object({
+  questionId: z.string().min(1),
+  question: z.string().min(1),
+  rubric: z.string().min(1),
+  modelAnswer: z.string().min(1),
+  maxMarks: z.number().int().positive(),
+  response: z.string().min(1),
+});
+
+// What /api/grade returns for one question. A mark is always a whole
+// number from 0 up (clamped to max_marks elsewhere, invariant I1).
+// needsReview flags a result the tutor should double check.
+export const GradeOutputSchema = z.object({
+  mark: z.number().int().min(0),
+  feedback: z.string().min(1),
+  needsReview: z.boolean(),
+});
+
+export type GradeRequest = z.infer<typeof GradeRequestSchema>;
+export type GradeOutput = z.infer<typeof GradeOutputSchema>;

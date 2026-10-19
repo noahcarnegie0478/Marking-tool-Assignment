@@ -28,7 +28,25 @@ const initialState: GradingState = {
 // Builds one student's empty grading grid from their submission (question
 // text, rubric, response, no_submission/pending status already decided by
 // the data loader) and stores it under their name.
-type Action = { type: "INIT_EXAM"; submission: StudentSubmission };
+type Action =
+  | { type: "INIT_EXAM"; submission: StudentSubmission }
+  // A "Grade with AI" run is starting for this student. total is how
+  // many questions will actually be sent (no-submission ones are never
+  // counted, invariant I4).
+  | { type: "START_GRADING"; student: string; total: number }
+  // One question came back from the grading loop (a real grade, or a
+  // safe fallback if the call failed). Writes the result and bumps the
+  // progress bar by one.
+  | {
+      type: "QUESTION_GRADED";
+      student: string;
+      questionId: string;
+      mark: number;
+      feedback: string;
+      needsReview: boolean;
+    }
+  // The grading loop finished every question for this student.
+  | { type: "FINISH_GRADING"; student: string };
 
 function gradingReducer(state: GradingState, action: Action): GradingState {
   switch (action.type) {
@@ -50,6 +68,63 @@ function gradingReducer(state: GradingState, action: Action): GradingState {
         },
       };
     }
+
+    case "START_GRADING": {
+      return {
+        ...state,
+        gradingProgress: {
+          student: action.student,
+          done: 0,
+          total: action.total,
+        },
+      };
+    }
+
+    case "QUESTION_GRADED": {
+      const studentResults = state.results[action.student];
+      if (!studentResults) {
+        return state;
+      }
+
+      const existingQuestion = studentResults[action.questionId];
+      if (!existingQuestion) {
+        return state;
+      }
+
+      // Only bump the progress bar if this result belongs to the run
+      // currently in progress (guards against a stale result landing
+      // after the tutor has already navigated away and back).
+      const progress = state.gradingProgress;
+      const nextProgress =
+        progress && progress.student === action.student
+          ? { ...progress, done: progress.done + 1 }
+          : progress;
+
+      return {
+        ...state,
+        results: {
+          ...state.results,
+          [action.student]: {
+            ...studentResults,
+            [action.questionId]: {
+              ...existingQuestion,
+              mark: action.mark,
+              feedback: action.feedback,
+              needsReview: action.needsReview,
+            },
+          },
+        },
+        gradingProgress: nextProgress,
+      };
+    }
+
+    case "FINISH_GRADING": {
+      if (state.gradingProgress?.student !== action.student) {
+        return state;
+      }
+      return { ...state, gradingProgress: null };
+    }
+
     default:
       return state;
   }
