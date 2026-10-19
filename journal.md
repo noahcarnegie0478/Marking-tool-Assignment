@@ -123,3 +123,17 @@ CodeOwner: I have test everything myself, should be good!
 **Verified:** `npm run lint` clean, `npx tsc --noEmit` clean, `npm test` 82/82 passed (6 new tests: `CONFIRM_ALL` happy path + no-op on an unopened student, `ADJUST` setting/trimming `humanFeedback`, `ADJUST` rejecting a bad mark even with a feedback edit, the Adjust textarea's pre-fill and submit), `npm run build` succeeded.
 
 **Not done yet:** no browser available this session — the human should click through: adjust a card's feedback and confirm it saved, confirm the green/amber button colours look right, and try "Confirm all" with a mix of graded/confirmed/adjusted questions on one student.
+
+---
+
+## 2026-10-19 · Session summary · THEME-01 + ADJ-03
+
+- What the agent did: Two pieces of work in one session. First, re-themed the whole app from beige to light grey (THEME-01), colours only, nothing else changed. Second, three tutor-facing improvements: Confirm turned green, Adjust turned amber, the tutor can now edit feedback (not just the mark) when adjusting, and added a "Confirm all" button.
+- Where it went wrong / what I corrected, and how I caught it: Nothing broke. Each piece reused an existing pattern (the token file for colours, the humanMark/aiMark shadow pattern for the new humanFeedback field), so there were no real surprises.
+- Reviewer rounds: THEME-01: 2 rounds (1 stale-comment fix, then clean). ADJ-03: 1 round (clean).
+- Decision made (and why): Asked for a plan and got a yes before writing any code both times, per CLAUDE.md's wait-for-approval rule, since both pieces touched several files and a couple of colour/behaviour choices weren't spelled out anywhere.
+- Rule added: none yet.
+
+**Verified:** lint, typecheck, full test suite, and build all green after each piece (see the two entries above for exact numbers).
+
+**Not done yet:** no browser this session for either piece — the human still needs to look at both in a real browser (see the two entries above for exactly what to check).
