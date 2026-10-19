@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { GradingState, QuestionResult } from "@/lib/state/GradingContext";
-import { getStatus, getTotal } from "@/lib/state/selectors";
+import { gradingReducer, type Action, type GradingState, type QuestionResult } from "@/lib/state/GradingContext";
+import { getEffectiveMark, getNeedsReview, getStatus, getTotal } from "@/lib/state/selectors";
 import { getStudentSubmission } from "@/lib/exam/loadExam";
 
 // Mirrors the reducer's INIT_EXAM case, without needing to render a
@@ -10,12 +10,40 @@ function initExam(submission: NonNullable<ReturnType<typeof getStudentSubmission
   for (const question of submission.questions) {
     questionResults[question.questionId] = {
       ...question,
-      mark: null,
-      feedback: null,
-      needsReview: false,
+      aiMark: null,
+      aiFeedback: null,
+      aiNeedsReview: false,
+      humanMark: null,
     };
   }
   return questionResults;
+}
+
+// Builds a single ai_graded question, the starting point for most of
+// this ticket's confirm/adjust/re-do cases.
+function aiGradedQuestion(overrides: Partial<QuestionResult> = {}): QuestionResult {
+  return {
+    questionId: "Q1",
+    question: "What is 2 + 2?",
+    rubric: "1 mark for 4.",
+    modelAnswer: "4",
+    maxMarks: 3,
+    response: "4",
+    status: "ai_graded",
+    aiMark: 2,
+    aiFeedback: "Partial credit.",
+    aiNeedsReview: true,
+    humanMark: null,
+    ...overrides,
+  };
+}
+
+function stateWith(student: string, question: QuestionResult): GradingState {
+  return { results: { [student]: { [question.questionId]: question } }, gradingProgress: null };
+}
+
+function dispatch(state: GradingState, action: Action): GradingState {
+  return gradingReducer(state, action);
 }
 
 describe("getStatus", () => {
@@ -40,5 +68,150 @@ describe("INIT_EXAM (Diego)", () => {
     const expectedMax = diego.questions.reduce((sum, q) => sum + q.maxMarks, 0);
 
     expect(getTotal(results, "Diego")).toEqual({ awarded: 0, max: expectedMax });
+  });
+});
+
+describe("CONFIRM", () => {
+  it("confirms an ai_graded question: status confirmed, mark unchanged, needsReview clears", () => {
+    const question = aiGradedQuestion({ aiNeedsReview: true });
+    const before = stateWith("Ben", question);
+
+    const after = dispatch(before, { type: "CONFIRM", student: "Ben", questionId: "Q1" });
+
+    const updated = after.results.Ben.Q1;
+    expect(updated.status).toBe("confirmed");
+    expect(updated.aiMark).toBe(question.aiMark);
+    expect(getNeedsReview(updated)).toBe(false);
+  });
+
+  it("does nothing to a pending question (not yet AI graded)", () => {
+    const question = aiGradedQuestion({ status: "pending", aiMark: null, aiFeedback: null, aiNeedsReview: false });
+    const before = stateWith("Ben", question);
+
+    const after = dispatch(before, { type: "CONFIRM", student: "Ben", questionId: "Q1" });
+
+    expect(after).toEqual(before);
+  });
+});
+
+describe("ADJUST", () => {
+  it("adjusts 2/3 to 3/3: humanMark set, status adjusted, effectiveMark 3", () => {
+    const question = aiGradedQuestion({ maxMarks: 3, aiMark: 2 });
+    const before = stateWith("Ben", question);
+
+    const after = dispatch(before, { type: "ADJUST", student: "Ben", questionId: "Q1", rawValue: "3" });
+
+    const updated = after.results.Ben.Q1;
+    expect(updated.humanMark).toBe(3);
+    expect(updated.status).toBe("adjusted");
+    expect(getEffectiveMark(updated)).toBe(3);
+  });
+
+  it("clamps an adjust value above max_marks down to max_marks (I1)", () => {
+    const question = aiGradedQuestion({ maxMarks: 3 });
+    const before = stateWith("Ben", question);
+
+    const after = dispatch(before, { type: "ADJUST", student: "Ben", questionId: "Q1", rawValue: "5" });
+
+    expect(after.results.Ben.Q1.humanMark).toBe(3);
+  });
+
+  it("clamps a negative adjust value up to 0", () => {
+    const question = aiGradedQuestion({ maxMarks: 3 });
+    const before = stateWith("Ben", question);
+
+    const after = dispatch(before, { type: "ADJUST", student: "Ben", questionId: "Q1", rawValue: "-1" });
+
+    expect(after.results.Ben.Q1.humanMark).toBe(0);
+  });
+
+  it.each(["abc", "", "2.5", "  "])("rejects a non-whole-number value (%s) with no state change", (rawValue) => {
+    const question = aiGradedQuestion();
+    const before = stateWith("Ben", question);
+
+    const after = dispatch(before, { type: "ADJUST", student: "Ben", questionId: "Q1", rawValue });
+
+    expect(after).toEqual(before);
+  });
+
+  it("does not allow adjusting a no-submission question (stays at 0)", () => {
+    const question = aiGradedQuestion({ status: "no_submission", aiMark: null, aiFeedback: null, aiNeedsReview: false });
+    const before = stateWith("Ben", question);
+
+    const after = dispatch(before, { type: "ADJUST", student: "Ben", questionId: "Q1", rawValue: "2" });
+
+    expect(after).toEqual(before);
+    expect(getEffectiveMark(after.results.Ben.Q1)).toBe(0);
+  });
+
+  it("allows re-adjusting an already-adjusted question", () => {
+    const question = aiGradedQuestion({ status: "adjusted", humanMark: 1, maxMarks: 3 });
+    const before = stateWith("Ben", question);
+
+    const after = dispatch(before, { type: "ADJUST", student: "Ben", questionId: "Q1", rawValue: "3" });
+
+    expect(after.results.Ben.Q1.humanMark).toBe(3);
+  });
+});
+
+describe("Re-do (START_REDO then QUESTION_GRADED)", () => {
+  it("re-does a graded question: moves to grading, then a fresh result lands as ai_graded", () => {
+    const question = aiGradedQuestion({ aiMark: 1, aiFeedback: "old feedback" });
+    const afterStart = dispatch(stateWith("Ben", question), {
+      type: "START_REDO",
+      student: "Ben",
+      questionId: "Q1",
+    });
+
+    expect(afterStart.results.Ben.Q1.status).toBe("grading");
+
+    const afterGraded = dispatch(afterStart, {
+      type: "QUESTION_GRADED",
+      student: "Ben",
+      questionId: "Q1",
+      mark: 3,
+      feedback: "new feedback",
+      needsReview: false,
+    });
+
+    const updated = afterGraded.results.Ben.Q1;
+    expect(updated.status).toBe("ai_graded");
+    expect(updated.aiMark).toBe(3);
+    expect(updated.aiFeedback).toBe("new feedback");
+  });
+
+  it("clears humanMark when re-doing a previously adjusted question", () => {
+    const question = aiGradedQuestion({ status: "adjusted", humanMark: 1 });
+    const afterStart = dispatch(stateWith("Ben", question), {
+      type: "START_REDO",
+      student: "Ben",
+      questionId: "Q1",
+    });
+    const afterGraded = dispatch(afterStart, {
+      type: "QUESTION_GRADED",
+      student: "Ben",
+      questionId: "Q1",
+      mark: 2,
+      feedback: "fresh AI result",
+      needsReview: false,
+    });
+
+    const updated = afterGraded.results.Ben.Q1;
+    expect(updated.humanMark).toBeNull();
+    expect(getEffectiveMark(updated)).toBe(2);
+  });
+});
+
+describe("getTotal over a mix of ai_graded, confirmed, and adjusted questions (I5)", () => {
+  it("sums each question's effective mark", () => {
+    const results: GradingState["results"] = {
+      Ben: {
+        Q1: aiGradedQuestion({ questionId: "Q1", maxMarks: 3, aiMark: 2, status: "ai_graded" }),
+        Q2: aiGradedQuestion({ questionId: "Q2", maxMarks: 2, aiMark: 2, status: "confirmed" }),
+        Q3: aiGradedQuestion({ questionId: "Q3", maxMarks: 4, aiMark: 1, humanMark: 4, status: "adjusted" }),
+      },
+    };
+
+    expect(getTotal(results, "Ben")).toEqual({ awarded: 2 + 2 + 4, max: 3 + 2 + 4 });
   });
 });

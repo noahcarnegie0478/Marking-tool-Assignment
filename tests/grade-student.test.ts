@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { GradingState, QuestionResult } from "@/lib/state/GradingContext";
+import { gradingReducer, type Action, type GradingState, type QuestionResult } from "@/lib/state/GradingContext";
 import { getTotal } from "@/lib/state/selectors";
 import { getStudentSubmission } from "@/lib/exam/loadExam";
 import { gradeStudent } from "@/lib/state/gradeStudent";
@@ -12,40 +12,19 @@ function initExam(submission: NonNullable<ReturnType<typeof getStudentSubmission
   for (const question of submission.questions) {
     questionResults[question.questionId] = {
       ...question,
-      mark: null,
-      feedback: null,
-      needsReview: false,
+      aiMark: null,
+      aiFeedback: null,
+      aiNeedsReview: false,
+      humanMark: null,
     };
   }
   return questionResults;
 }
 
-// A tiny stand-in for the real reducer: applies the same actions
-// gradeStudent dispatches, so we can assert on the state it produces
-// without rendering React.
-function applyAction(
-  results: GradingState["results"],
-  action:
-    | { type: "START_GRADING"; student: string; total: number }
-    | ({ type: "QUESTION_GRADED"; student: string; questionId: string } & GradeOutput)
-    | { type: "FINISH_GRADING"; student: string }
-): GradingState["results"] {
-  if (action.type !== "QUESTION_GRADED") {
-    return results;
-  }
-  const studentResults = results[action.student];
-  return {
-    ...results,
-    [action.student]: {
-      ...studentResults,
-      [action.questionId]: {
-        ...studentResults[action.questionId],
-        mark: action.mark,
-        feedback: action.feedback,
-        needsReview: action.needsReview,
-      },
-    },
-  };
+// Applies one action through the real reducer, so this test exercises the
+// actual QUESTION_GRADED logic instead of a second, test-only copy of it.
+function applyAction(results: GradingState["results"], action: Action): GradingState["results"] {
+  return gradingReducer({ results, gradingProgress: null }, action).results;
 }
 
 describe("gradeStudent", () => {
@@ -111,7 +90,7 @@ describe("gradeStudent", () => {
 
     // gradeStudent's real callGradeApi never throws (it catches internally),
     // so here we simulate "the call came back as a safe fallback" directly,
-    // the same way the real defaultCallGradeApi would after catching.
+    // the same way the real callGradeApi would after catching.
     const safeCallGradeApi = async (question: QuestionResult): Promise<GradeOutput> => {
       try {
         return await fakeCallGradeApi(question);
@@ -129,8 +108,26 @@ describe("gradeStudent", () => {
       safeCallGradeApi
     );
 
-    expect(results.Diego["Q6"].mark).toBe(0);
-    expect(results.Diego["Q6"].needsReview).toBe(true);
-    expect(results.Diego["Q2"].mark).toBe(diego.questions.find((q) => q.questionId === "Q2")!.maxMarks);
+    expect(results.Diego["Q6"].aiMark).toBe(0);
+    expect(results.Diego["Q6"].aiNeedsReview).toBe(true);
+    expect(results.Diego["Q2"].aiMark).toBe(diego.questions.find((q) => q.questionId === "Q2")!.maxMarks);
+  });
+
+  it("skips a confirmed or adjusted question instead of overwriting the human mark (I6)", async () => {
+    const diego = getStudentSubmission("Diego")!;
+    const questionResults = initExam(diego);
+    // Q2 and Q6 are Diego's two answered questions. Lock one of each kind.
+    questionResults.Q2 = { ...questionResults.Q2, status: "confirmed", aiMark: 2 };
+    questionResults.Q6 = { ...questionResults.Q6, status: "adjusted", aiMark: 1, humanMark: 3 };
+
+    const calledQuestionIds: string[] = [];
+    const fakeCallGradeApi = async (question: QuestionResult): Promise<GradeOutput> => {
+      calledQuestionIds.push(question.questionId);
+      return { mark: 0, feedback: "overwritten", needsReview: false };
+    };
+
+    await gradeStudent("Diego", Object.values(questionResults), () => {}, fakeCallGradeApi);
+
+    expect(calledQuestionIds).toEqual([]);
   });
 });

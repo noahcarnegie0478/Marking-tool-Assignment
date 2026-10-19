@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { useGradingDispatch, useGradingState } from "@/lib/state/GradingContext";
-import { getTotal } from "@/lib/state/selectors";
+import { getNeedsReview, getStatus, getTotal } from "@/lib/state/selectors";
 import { gradeStudent } from "@/lib/state/gradeStudent";
 import type { StudentSubmission } from "@/lib/exam/loadExam";
 import { studentAvatarColors, studentInitial } from "@/lib/ui/studentAvatar";
@@ -62,11 +62,7 @@ function StudentPageContent() {
   const questionResults = results[name];
   const total = getTotal(results, name);
   const alreadyMarked =
-    !isGradingThisStudent &&
-    Boolean(questionResults) &&
-    Object.values(questionResults!).every(
-      (q) => q.status === "no_submission" || q.mark !== null
-    );
+    !isGradingThisStudent && Boolean(questionResults) && getStatus(results, name) === "Marked";
 
   // Kicks off the grading loop for this student. gradeStudent dispatches
   // START_GRADING, one QUESTION_GRADED per answered question, then
@@ -163,14 +159,15 @@ function StudentPageContent() {
             <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
               {Object.values(questionResults).map((question) => {
                 const isNoSubmission = question.status === "no_submission";
-                const hasMark = question.mark !== null;
+                const hasMark = question.aiMark !== null;
+                const needsReview = getNeedsReview(question);
 
                 return (
                   <li
                     key={question.questionId}
                     style={{
                       background: isNoSubmission ? "#F6EEE0" : "var(--card)",
-                      border: question.needsReview
+                      border: needsReview
                         ? `1px solid ${"var(--warning-border)"}`
                         : "1px solid var(--border)",
                       borderRadius: "10px",
@@ -205,7 +202,7 @@ function StudentPageContent() {
                           >
                             {question.questionId}
                           </span>
-                          {question.needsReview && (
+                          {needsReview && (
                             <span
                               style={{
                                 fontSize: "12px",
@@ -249,7 +246,7 @@ function StudentPageContent() {
                       <MarkBox
                         noSub={isNoSubmission}
                         hasMark={hasMark}
-                        mark={question.mark}
+                        mark={question.aiMark}
                         maxMarks={question.maxMarks}
                       />
                     </div>
@@ -280,7 +277,7 @@ function StudentPageContent() {
                       </div>
                     </div>
 
-                    {question.feedback && (
+                    {question.aiFeedback && (
                       <div style={{ marginTop: "14px" }}>
                         <SectionLabel>Feedback</SectionLabel>
                         <div
@@ -294,7 +291,7 @@ function StudentPageContent() {
                             padding: "13px 16px",
                           }}
                         >
-                          {question.feedback}
+                          {question.aiFeedback}
                         </div>
                       </div>
                     )}
