@@ -1,0 +1,107 @@
+{
+  "questions": [
+    {
+      "id": "Q1",
+      "topic": "Algebra",
+      "difficulty": "easy",
+      "max_marks": 2,
+      "question": "Solve for x: 4x - 9 = 15",
+      "model_answer": "4x = 24, x = 6",
+      "rubric": "1 mark for correctly isolating the term with x (4x = 24). 1 mark for the correct final answer (x = 6). Because this is a single-step equation, full marks may also be awarded for the correct final answer alone, with no working shown."
+    },
+    {
+      "id": "Q2",
+      "topic": "Percentages",
+      "difficulty": "easy",
+      "max_marks": 2,
+      "question": "A jacket costs $80. It is discounted by 15%. What is the sale price?",
+      "model_answer": "Discount = 0.15 x 80 = 12. Sale price = 80 - 12 = 68.",
+      "rubric": "1 mark for correctly calculating the discount amount ($12). 1 mark for the correct final sale price ($68). The single-step method (0.85 x 80 = 68) is equally valid and should receive full marks."
+    },
+    {
+      "id": "Q3",
+      "topic": "Simultaneous equations",
+      "difficulty": "medium",
+      "max_marks": 3,
+      "question": "Solve the simultaneous equations: 2x + y = 11 and x - y = 1",
+      "model_answer": "Adding the two equations eliminates y: 3x = 12, so x = 4. Substituting back gives y = 3.",
+      "rubric": "1 mark for a valid method to eliminate one variable. 1 mark for the correct value of x. 1 mark for the correct value of y. If the method is valid but one value is wrong due to an arithmetic slip, still award the method mark."
+    },
+    {
+      "id": "Q4",
+      "topic": "Quadratics",
+      "difficulty": "medium",
+      "max_marks": 3,
+      "question": "Factorise and solve: x^2 - 5x + 6 = 0",
+      "model_answer": "(x - 2)(x - 3) = 0, so x = 2 or x = 3",
+      "rubric": "1 mark for correct factorisation. 1 mark each for the two correct roots (max 2 marks for roots). The quadratic formula is an equally valid alternate method and should receive full marks if executed correctly, in place of the factorisation mark."
+    },
+    {
+      "id": "Q5",
+      "topic": "Trigonometry",
+      "difficulty": "medium-hard",
+      "max_marks": 3,
+      "question": "A ladder leans against a wall, making a 65 degree angle with the ground. The base of the ladder is 2m from the wall. How tall is the point where the ladder touches the wall, to 1 decimal place?",
+      "model_answer": "tan(65) = height / 2, so height = 2 x tan(65) which is approximately 4.3m",
+      "rubric": "1 mark for identifying tan as the correct trig ratio for this setup. 1 mark for correctly setting up the equation. 1 mark for the correct final answer to 1 decimal place. Accept any answer in the range 4.2m to 4.4m to allow for rounding differences."
+    },
+    {
+      "id": "Q6",
+      "topic": "Calculus",
+      "difficulty": "hard",
+      "max_marks": 3,
+      "question": "Differentiate f(x) = (3x^2 + 1)(x - 4) using the product rule.",
+      "model_answer": "f'(x) = 6x(x-4) + (3x^2+1)(1) = 6x^2 - 24x + 3x^2 + 1 = 9x^2 - 24x + 1",
+      "rubric": "1 mark for correctly applying the product rule structure. 1 mark for correct derivatives of each factor. 1 mark for the correct simplified final expression. An unsimplified but algebraically correct expression should receive 2 of the 3 marks."
+    },
+    {
+      "id": "Q7",
+      "topic": "Geometry",
+      "difficulty": "hard",
+      "max_marks": 4,
+      "question": "In triangle ABC, angle A = 90 degrees, AB = 6cm, AC = 8cm. Find the length of BC and the area of the triangle.",
+      "model_answer": "BC = sqrt(6^2 + 8^2) = sqrt(100) = 10cm using Pythagoras. Area = 0.5 x 6 x 8 = 24 cm^2.",
+      "rubric": "1 mark for correctly applying Pythagoras. 1 mark for the correct value of BC (10cm). 1 mark for the correct area method. 1 mark for the correct area (24 cm^2)."
+    },
+    {
+      "id": "Q8",
+      "topic": "Probability",
+      "difficulty": "hard",
+      "max_marks": 3,
+      "question": "A bag contains 5 red and 3 blue marbles. Two marbles are drawn without replacement. What is the probability both are red?",
+      "model_answer": "P = (5/8) x (4/7) = 20/56, which simplifies to 5/14",
+      "rubric": "1 mark for the correct first probability (5/8). 1 mark for correctly adjusting the second probability for no replacement (4/7). 1 mark for the correct final answer. An unsimplified but equivalent fraction (20/56) should receive full marks."
+    }
+  ],
+  "student_responses": [
+    { "student": "Aisha", "question_id": "Q1", "response": "4x - 9 = 15. Add 9 to both sides: 4x = 24. Divide by 4: x = 6." },
+    { "student": "Aisha", "question_id": "Q2", "response": "0.15 x 80 = 12. 80 - 12 = 68." },
+    { "student": "Aisha", "question_id": "Q3", "response": "2x + y = 11, x - y = 1. Adding: 3x = 12, x = 4. Then y = 11 - 2(4) = 3." },
+    { "student": "Aisha", "question_id": "Q4", "response": "Using the quadratic formula: x = [5 plus or minus sqrt(25-24)] / 2 = [5 plus or minus 1] / 2. So x = 3 or x = 2." },
+    { "student": "Aisha", "question_id": "Q5", "response": "tan(65) = h / 2, so h = 2 x tan(65) = 4.3m." },
+    { "student": "Aisha", "question_id": "Q6", "response": "f'(x) = (3x^2+1)' (x-4) + (3x^2+1)(x-4)' = 6x(x-4) + (3x^2+1)(1) = 6x^2 - 24x + 3x^2 + 1 = 9x^2 - 24x + 1." },
+    { "student": "Aisha", "question_id": "Q7", "response": "" },
+    { "student": "Aisha", "question_id": "Q8", "response": "5/8 x 4/7 = 20/56 = 5/14." },
+
+    { "student": "Ben", "question_id": "Q1", "response": "4x - 9 = 15. 4x = 25. x = 6.25." },
+    { "student": "Ben", "question_id": "Q2", "response": "Discount = 0.15 x 80 = 12. 80 - 12 = 68." },
+    { "student": "Ben", "question_id": "Q3", "response": "2x + y = 11, x - y = 1. Adding the two equations... 3x = ... [working unclear, cuts off here]" },
+    { "student": "Ben", "question_id": "Q4", "response": "(x-2)(x-3) = 0. x = 2 or x = 3." },
+    { "student": "Ben", "question_id": "Q5", "response": "tan(65) = 2 / h, so h = 2 / tan(65) = 0.93m." },
+    { "student": "Ben", "question_id": "Q6", "response": "f'(x) = 6x(x-4) + (3x^2+1)(1) = 6x^2 - 24x + 3x^2 + 1 = 9x^2 - 24x + 1." },
+    { "student": "Ben", "question_id": "Q7", "response": "BC = sqrt(36+64) = sqrt(100) = 10cm. Area = 0.5 x 6 x 8 = 24 cm^2." },
+    { "student": "Ben", "question_id": "Q8", "response": "5/8 x 4/7 = 20/56." },
+
+    { "student": "Chen", "question_id": "Q1", "response": "x = 6" },
+    { "student": "Chen", "question_id": "Q2", "response": "68" },
+    { "student": "Chen", "question_id": "Q3", "response": "x = 4, y = 3" },
+    { "student": "Chen", "question_id": "Q4", "response": "(x-2)(x+3) = 0. x = 2 or x = 3." },
+    { "student": "Chen", "question_id": "Q5", "response": "I didn't get to this one." },
+    { "student": "Chen", "question_id": "Q6", "response": "f'(x) = 6x + 1" },
+    { "student": "Chen", "question_id": "Q7", "response": "BC = sqrt(36+64) = 10cm. Area = 6 x 8 = 48 cm^2." },
+    { "student": "Chen", "question_id": "Q8", "response": "5/8 x 3/8 = 15/64." },
+
+    { "student": "Diego", "question_id": "Q2", "response": "80 - 15 = 65" },
+    { "student": "Diego", "question_id": "Q6", "response": "f'(x) = 9x^2 - 24x + 1." }
+  ]
+}
