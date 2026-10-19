@@ -1,7 +1,22 @@
 # Reflection
 
-This tool lets a tutor open one Year 12 maths exam, grade all four students with AI, and read the marks and feedback. It is not meant to be trusted blindly. Every mark the AI is not confident about gets a **Needs review** badge, so the tutor's eye goes straight to the response they still need to check by hand. A mark is always a whole number between 0 and the question's max — the code clamps it, so a bad model reply can never show up as a wild or negative number.
+**What I wrote vs delegated.**
+I own the thinking, the agent owns the typing. I did the analysis and wrote the three files that hold the project's context (CLAUDE.md, the spec, the tickets) and the test process. I treat the agent like a strong engineer with no direction: in Specification to Execution to Verification, I take the first and last, it takes the middle.
 
-The biggest risk with a tool like this is a confident, wrong mark. That is why `needs_review` exists everywhere a result could be shaky: bad or missing model output, a model call that fails outright, and genuinely ambiguous responses (answer-only on a multi-mark question, for example). All three land in the same visible badge, so the tutor never has to guess which marks are solid.
+**Where I corrected the agent, and what caught it.**
+A student answer with a literal `</student_response>` tag could close the data block early, the exact injection the design should stop, and the first version had no test for it. My test process plus a blind review (a fresh agent that sees only the ticket and the diff) caught it; I escaped the brackets and added a test. "Tests pass" was never enough on its own.
 
-What I would build next, if I had more time: a per-question **redo / adjust** button, so a tutor who disagrees with a mark can nudge it without re-grading the whole student. I left this out on purpose — it is named as a stretch goal in the ticket, and a plain, complete, working UI beats a half-built adjust feature. The grading engine and the `needs_review` flag — the parts that stop a wrong mark from being trusted — were never cut.
+**How I knew the prompt was working.**
+I built it the way I learn any AI: find the traps a student could use to break it, ask what-if questions, then make sure the prompt blocks each one. On the arguable marks (Ben Q1, Chen Q2, Q4, Q6) I don't test for an exact number, only that it stays in a defensible range and flags needs_review. Before production I'd test on a larger set and run each answer more than once.
+
+**Tricky or ambiguous responses.**
+Answer-only, contradiction, and truncated cases I handled by patching the rubric's silent cases in the prompt and flagging needs_review instead of guessing. The hardest one broke the system first (the tag-breakout above), but the review fenced it before the ticket was done.
+
+**Handling the text before the model.**
+Two untrusted inputs, two gates. Before: validate the payload, skip blank answers, wrap the student text as data with its brackets escaped. After: validate the model's output with zod and clamp the mark in code, so any failure returns a safe "0, needs review", never a crash or a confident fake mark.
+
+**Biggest gap if it went live tomorrow.**
+The rubric is an input too, and a weak one quietly produces wrong marks a tutor might trust. The real fix is writing rubrics the AI reads the same way every time; until then a tutor should treat every mark as a first draft. (Also: these are minors' answers sent to a third party, with nothing saved or anonymised yet.)
+
+**What's next.**
+Handle submissions properly, add per-question AI re-marking so a tutor can redo or adjust one answer, and polish the UI.

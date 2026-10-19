@@ -1,0 +1,2630 @@
+
+❯ <ide_opened_file>The user opened the file
+  /Users/noah.carnegie/Documents/1910/marking-tool/public/Maths Exam Marking
+  Tool.html in the IDE. This may or may not be related to the current
+  task.</ide_opened_file>
+
+❯ please work on the ticket of UI-02, make sure you will take the Maths Exam
+  Marking Tool.html file as the main model to reflects.
+
+  Searched for 1 pattern, listed 1 directory (ctrl+o to expand)
+
+⏺ Let me read the ticket details and relevant context files.
+
+  Searched for 3 patterns, read 2 files (ctrl+o to expand)
+  ⎿  Loaded marking-tool/CLAUDE.md
+
+⏺ Bash(sed -n '380,397p'
+      "/Users/noah.carnegie/Documents/1910/marking-tool/public/Maths Exam
+      Marking Tool.html" | cut -c1-300
+      echo "---template tag check---"…)
+  ⎿    </script>
+
+       <script type="__bundler/manifest">
+     … +30 lines (ctrl+o to expand)
+
+⏺ Bash(cd "/private/tmp/claude-501/-Users-noah-carnegie-Documents-1910/88610a6a-
+      98ab-4a1a-87d6-826c8a5aa68b/scratchpad" 2>/dev/null || cd /tmp
+      python3 -I - <<'PYEOF'…)
+  ⎿  ['6220830c-de69-487c-ad19-4871f49ff214', '56589d75-3e23-46d1-84b4-1ff8
+     91eb671d', 'd2d262cb-903e-4405-be6a-95b1485a3479', '86da3c75-6a6f-4dde
+     -901b-89fd0b6b3b08', 'ccf4ec26-412b-427c-ba32-cf6ace09d017', '5e38f400
+     … +8 lines (ctrl+o to expand)
+  ⎿  Shell cwd was reset to /Users/noah.carnegie/Documents/1910
+
+⏺ Bash(mkdir -p /private/tmp/claude-501/-Users-noah-carnegie-Documents-1910/8861
+      0a6a-98ab-4a1a-87d6-826c8a5aa68b/scratchpad
+      python3 -I - <<'PYEOF'…)
+  ⎿  69134
+
+⏺ 69KB of JS — this is the real source of the design reference. Let me read it
+  in chunks.
+
+  Read 1 file (ctrl+o to expand)
+
+⏺ Bash(python3 -I - <<'PYEOF'
+      import json, re…)
+  ⎿  28356
+
+⏺ This is the real design template — let me read it.
+
+  Read 1 file (ctrl+o to expand)
+
+⏺ Bash(cd /Users/noah.carnegie/Documents/1910/marking-tool && grep -n "Matrix
+      theme\|flow screens\|Screen 1\|Screen 2\|needs_review\|Needs review"
+      docs/technical-spec.…)
+  ⎿  ---
+     37:| 2 | An auto-marker that is confidently wrong is dangerous | Every
+      uncertain mark is flagged `needs_review` for a human |
+     … +30 lines (ctrl+o to expand)
+
+⏺ Bash(echo "--page.tsx--" && cat app/page.tsx && echo "--student page--" &&
+      find app/student -type f | xargs -I{} echo {} && echo
+      "--student/[name]/page.tsx--" && cat…)
+  ⎿  --page.tsx--
+     "use client";
+     … +235 lines (ctrl+o to expand)
+
+  Read 1 file, listed 1 directory (ctrl+o to expand)
+
+⏺ Entered plan mode
+  Claude is now exploring and designing an implementation approach.
+
+  Read 1 file (ctrl+o to expand)
+
+⏺ Bash(cat app/api/grade/route.ts && echo "---data sample---" && python3 -c
+      "import json; d=json.load(open('data/exam_data.json'));
+      print(list(d.keys())); print(len(d.…)
+  ⎿  import { NextResponse } from "next/server";
+     import { GradeRequestSchema } from "@/lib/validation/schemas";
+     import { gradeResponse } from "@/lib/server/gradeResponse";
+     … +42 lines (ctrl+o to expand)
+
+⏺ Updated plan
+  ⎿  /plan to preview
+
+⏺ User approved Claude's plan
+  ⎿  Plan saved to: ~/.claude/plans/immutable-dazzling-pelican.md · /plan to
+     edit
+     UI-02 · Final UI polish, review badges, wrap
+
+     Context
+
+     UI-01 and GRADE-01 already built a fully working app (Screen 1 list, Screen
+     2 question cards, real AI grading, needs_review). It currently uses plain
+     default Tailwind styling (app/page.tsx, app/student/[name]/page.tsx) —
+     functional but not "considered and clear," which is what UI-02 asks for.
+
+     The user supplied a reference mockup, public/Maths Exam Marking Tool.html.
+     It's a bundled Artifact export; I decompressed its embedded template and
+     found the exact intended design: a cream/warm theme (#FFFAF3 base, #FFF2DB
+     cards, #D11A33 red accent), Hanken Grotesk font, avatar-initial circles,
+     status pills, a Q-number + needs-review/no-submission badge row,
+     rubric/response layout, and a sticky bottom action bar with a striped
+     progress bar while grading. This plan re-skins the two real screens to
+     match that reference, using the real app's data and state, not the mockup's
+     hardcoded demo data.
+
+     Scope is presentation only (ticket says "Invariants touched: none"). No
+     business logic, reducer shape, or API changes.
+
+     Approach
+
+     1. Theme + font — app/layout.tsx, app/globals.css
+     - Swap Geist/Geist_Mono for Hanken_Grotesk via next/font/google (same
+       pattern already used, no new dependency).
+     - Replace the default Tailwind light/dark CSS vars in globals.css with the
+       mockup's palette as CSS custom properties (cream base, card cream, deep
+       red, warm text #2A2320, muted #9A8C7C, warning amber #8A6400/#FBECCB).
+       Drop the prefers-color-scheme: dark block — the mockup has no dark mode
+       and the ticket doesn't ask for one.
+     - Fix the leftover default <title>/description in metadata (flagged, not
+       fixed, in UI-01's review) to the real exam title.
+
+     2. Small pure helper — lib/ui/studentAvatar.ts (new)
+     - The mockup hardcodes one color per demo student. The real app has 4 names
+       from data, not fixed IDs, so: a pure function studentAvatarColors(name):
+       {bg, color} that picks from a small fixed palette (same hues as the
+       mockup: red, tan, blue, green) via a stable hash of the name. Pure, no
+       I/O — fits lib/ conventions (§5 of CLAUDE.md).
+
+     3. Screen 1 — app/page.tsx
+     - Header: eyebrow label + "Year 12 Mathematics" title (from real exam data
+       context, not hardcoded demo copy).
+     - Stat row: Submissions / Marked / Questions-each, computed from the real
+       students list + results (marked count via existing getStatus).
+     - Replace the <ul> with the mockup's card: header row (Student / Status /
+       Score), then one row per student — avatar circle, name, "8 responses"
+       meta, status pill (uses existing getStatus), score (uses existing
+       getTotal), chevron.
+     - Loading and error states get the same cream card treatment instead of
+       bare <p> text, so they match the "no blank/crash" acceptance criterion.
+     - Reuses getStatus/getTotal from lib/state/selectors.ts as-is — no selector
+       changes.
+
+     4. Screen 2 — app/student/[name]/page.tsx
+     - Header: back link, avatar + name + "Year 12 Mathematics · Response
+       Marking" subtitle, total on the right (color flips to red once marked,
+       matching mockup).
+     - Question cards per the mockup: Q{n} badge, ⚠ Needs review badge when
+       question.needsReview, No submission badge when status ===
+       "no_submission", question text, Rubric block, Response block, mark box
+       (mark / maxMarks, muted dash before grading).
+     - The "failed card" acceptance criterion: gradeStudent's existing safe
+       fallback already sets needsReview: true with feedback: "Could not grade
+       this response." on any API failure — this becomes visible automatically
+       once the needs-review badge + feedback text are rendered, with no new
+       state needed.
+     - Sticky bottom bar: progress bar + "Grading N of total…" while
+       gradingProgress is set (reusing the real done/total, striped-animation
+       CSS from the mockup); Return + Grade/Re-grade with AI buttons otherwise.
+     - notFound and loadError states get the same themed empty-state treatment
+       as Screen 1, not bare text.
+
+     5. Reflection doc — reflection.md (repo root, matching journal.md's
+     existing convention — this repo has no docs/ folder despite the ticket
+     text)
+     - Half a page: what the tool does, why needs_review matters (the "don't
+       blindly trust" story), and naming the parked per-question redo/adjust
+       button as the next step — matching the ticket's "Out" scope note.
+
+     6. Verify
+     - npm run lint, npx tsc --noEmit, npm test, npm run build — paste real
+       output per CLAUDE.md §9.
+     - No browser tool available this session, so I cannot click through it
+       myself; I'll say so explicitly and ask the human to do one manual pass
+       (this matches how UI-01's entry handled the same gap).
+     - Per CLAUDE.md §3, this still needs the blind-review step before being
+       marked done — I'll note that in the end-of-ticket report, not mark it
+       done myself.
+
+     Files touched
+
+     - app/layout.tsx — font swap, nothing else
+     - app/globals.css — theme tokens
+     - app/page.tsx — Screen 1 restyle
+     - app/student/[name]/page.tsx — Screen 2 restyle
+     - lib/ui/studentAvatar.ts — new, pure, small
+     - reflection.md — new
+
+     No changes to GradingContext.tsx, gradeStudent.ts, selectors.ts, API
+     routes, or any human-owned doc.
+
+⏺ Plan approved. Implementing now.
+
+  Read 2 files (ctrl+o to expand)
+
+⏺ Now let's update layout.tsx and globals.css.
+
+⏺ Write(marking-tool/app/layout.tsx)  ⎿  Added 6 lines, removed 11 lines
+       1  import type { Metadata } from "next";
+       2 -import { Geist, Geist_Mono } from "next/font/google";          
+       2 +import { Hanken_Grotesk } from "next/font/google";             
+       3  import { GradingProvider } from "@/lib/state/GradingContext";
+       4  import "./globals.css";
+       5  
+       6 -const geistSans = Geist({                                      
+       7 -  variable: "--font-geist-sans",                               
+       6 +const hankenGrotesk = Hanken_Grotesk({                         
+       7 +  variable: "--font-hanken-grotesk",                           
+       8    subsets: ["latin"],
+       9  });
+      10  
+      11 -const geistMono = Geist_Mono({                                 
+      12 -  variable: "--font-geist-mono",                               
+      13 -  subsets: ["latin"],                                          
+      14 -});                                                            
+      15 -                                                               
+      11  export const metadata: Metadata = {
+      17 -  title: "Create Next App",                                    
+      18 -  description: "Generated by create next app",                 
+      12 +  title: "Year 12 Mathematics — Response Marking",             
+      13 +  description: "AI-assisted marking for one Year 12 maths exam,
+         + with every uncertain mark flagged for a human to check.",     
+      14  };
+      15  
+      16  export default function RootLayout({ children }: LayoutProps<"/
+          ">) {
+      17    return (
+      18      <html
+      19        lang="en"
+      25 -      className={`${geistSans.variable} ${geistMono.variable} h
+         --full antialiased`}                                            
+      20 +      className={`${hankenGrotesk.variable} h-full antialiased`
+         +}                                                              
+      21      >
+      22        <body className="min-h-full flex flex-col">
+      23          <GradingProvider>{children}</GradingProvider>
+
+⏺ Write(marking-tool/app/globals.css)
+  ⎿  Added 28 lines, removed 12 lines
+       1  @import "tailwindcss";
+       2  
+       3 +/*                                                             
+       4 +  Theme tokens taken from the design reference the human suppli
+         +ed                                                             
+       5 +  (public/Maths Exam Marking Tool.html): a warm cream base with
+         + a single                                                      
+       6 +  deep red accent, used only for primary actions and marks (tic
+         +ket UI-02                                                      
+       7 +  acceptance criterion).                                       
+       8 +*/                                                             
+       9  :root {
+       4 -  --background: #ffffff;                                       
+       5 -  --foreground: #171717;                                       
+      10 +  --background: #fffaf3;                                       
+      11 +  --card: #fff2db;                                             
+      12 +  --card-strong: #ffe5bf;                                      
+      13 +  --foreground: #2a2320;                                       
+      14 +  --muted: #9a8c7c;                                            
+      15 +  --muted-strong: #b49a80;                                     
+      16 +  --border: rgba(42, 35, 32, 0.07);                            
+      17 +  --accent: #d11a33;                                           
+      18 +  --accent-hover: #b8142c;                                     
+      19 +  --warning-bg: #fbecd1;                                       
+      20 +  --warning-fg: #8a6400;                                       
+      21  }
+      22  
+      23  @theme inline {
+      24    --color-background: var(--background);
+      25    --color-foreground: var(--foreground);
+      11 -  --font-sans: var(--font-geist-sans);                         
+      12 -  --font-mono: var(--font-geist-mono);                         
+      26 +  --font-sans: var(--font-hanken-grotesk);                     
+      27  }
+      28  
+      15 -@media (prefers-color-scheme: dark) {                          
+      16 -  :root {                                                      
+      17 -    --background: #0a0a0a;                                     
+      18 -    --foreground: #ededed;                                     
+      19 -  }                                                            
+      20 -}                                                              
+      21 -                                                               
+      29  body {
+      30    background: var(--background);
+      31    color: var(--foreground);
+      25 -  font-family: Arial, Helvetica, sans-serif;                   
+      32 +  font-family: var(--font-hanken-grotesk), system-ui, sans-seri
+         +f;                                                             
+      33  }
+      34 +                                                               
+      35 +@keyframes bar-stripe {                                        
+      36 +  from {                                                       
+      37 +    background-position: 0 0;                                  
+      38 +  }                                                            
+      39 +  to {                                                         
+      40 +    background-position: 28px 0;                               
+      41 +  }                                                            
+      42 +}                                                              
+
+⏺ Now the avatar helper.
+
+⏺ Write(marking-tool/lib/ui/studentAvatar.ts)
+  ⎿  Wrote 28 lines to marking-tool/lib/ui/studentAvatar.ts
+       1 // Picks a display color for a student's initial-circle avatar.
+       2 // deterministic: the same name always gets the same color, with
+          no stored
+       3 // per-student config needed. Palette matches the design referen
+       4 // demo students (red, tan, blue, green), cycled by a stable has
+         h so a 5th
+       6 const AVATAR_PALETTE: { bg: string; color: string }[] = [
+       7   { bg: "#fce4e3", color: "#c0263a" },
+       8   { bg: "#f3e6d4", color: "#a06a38" },
+      10   { bg: "#e6efe2", color: "#4e7048" },
+     … +23 lines (ctrl+o to expand)
+
+⏺ Now Screen 1 (app/page.tsx).
+
+⏺ Write(marking-tool/app/page.tsx)
+  ⎿  Added 153 lines, removed 19 lines
+       4  import { useEffect, useState } from "react";
+       5  import { useGradingState } from "@/lib/state/GradingContext";
+       6  import { getStatus, getTotal } from "@/lib/state/selectors";
+       7 +import { studentAvatarColors, studentInitial } from "@/lib/ui/s
+         +tudentAvatar";                                                 
+       8  
+       9  type Submission = { name: string };
+      10  
+      11 +const QUESTIONS_PER_STUDENT = 8;                               
+      12 +                                                               
+      13  // Screen 1: the exam landing page. Lists one row per student w
+          ith their
+      14  // marking status and total, read from the grading store (not y
+          et touched
+      15  // until a tutor opens that student's page).
+     ...
+       28        });
+       29    }, []);
+       30  
+       31 +  const markedCount = students                                
+       32 +    ? students.filter(({ name }) => getStatus(results, name) =
+          +== "Marked").length                                           
+       33 +    : 0;                                                      
+       34 +                                                              
+       35    return (
+       29 -    <main className="flex flex-1 flex-col items-center p-16"> 
+       30 -      <div className="w-full max-w-2xl">                      
+       31 -        <h1 className="text-2xl font-semibold mb-6">Maths Exam
+          -</h1>                                                         
+       36 +    <main className="flex flex-1 justify-center px-6 py-10 sm:
+          +py-16">                                                       
+       37 +      <div className="w-full max-w-[820px]">                  
+       38 +        <div className="mb-7">                                
+       39 +          <div                                                
+       40 +            className="mb-2.5 text-xs font-bold uppercase"    
+       41 +            style={{ color: "var(--muted-strong)", letterSpaci
+          +ng: "0.14em" }}                                               
+       42 +          >                                                   
+       43 +            Year 12 · 2026 · Paper 1                          
+       44 +          </div>                                              
+       45 +          <h1 className="m-0 mb-1.5 text-[34px] font-extrabold
+          +" style={{ letterSpacing: "-0.02em" }}>                       
+       46 +            Year 12 Mathematics                               
+       47 +          </h1>                                               
+       48 +          <p className="m-0 text-[17px]" style={{ color: "var(
+          +--muted)" }}>                                                 
+       49 +            Response Marking                                  
+       50 +          </p>                                                
+       51 +        </div>                                                
+       52  
+       33 -        {loadError && <p>Could not load submissions. Try refre
+          -shing.</p>}                                                   
+       53 +        {loadError && <ErrorCard message="Could not load submi
+          +ssions. Try refreshing." />}                                  
+       54  
+       35 -        {!loadError && students === null && <p>Loading submiss
+          -ions...</p>}                                                  
+       55 +        {!loadError && students === null && <LoadingCard messa
+          +ge="Loading submissions…" />}                                 
+       56  
+       57          {!loadError && students !== null && (
+       38 -          <ul className="flex flex-col gap-2">                
+       39 -            {students.map(({ name }) => {                     
+       40 -              const status = getStatus(results, name);        
+       41 -              const total = getTotal(results, name);          
+       42 -              return (                                        
+       43 -                <li key={name}>                               
+       58 +          <>                                                  
+       59 +            <div className="mb-5 flex gap-2.5">               
+       60 +              <StatTile value={students.length} label="Submiss
+          +ions" />                                                      
+       61 +              <StatTile value={markedCount} label="Marked" /> 
+       62 +              <StatTile value={QUESTIONS_PER_STUDENT} label="Q
+          +uestions each" />                                             
+       63 +            </div>                                            
+       64 +                                                              
+       65 +            <div                                              
+       66 +              className="overflow-hidden rounded-[10px]"      
+       67 +              style={{                                        
+       68 +                background: "var(--card)",                    
+       69 +                border: "1px solid var(--border)",            
+       70 +                boxShadow: "0 1px 2px rgba(78,52,30,0.05), 0 1
+          +0px 26px rgba(78,52,30,0.05)",                                
+       71 +              }}                                              
+       72 +            >                                                 
+       73 +              <div                                            
+       74 +                className="flex items-center px-[22px] py-3.5 
+          +text-xs font-bold uppercase"                                  
+       75 +                style={{                                      
+       76 +                  color: "var(--muted-strong)",               
+       77 +                  letterSpacing: "0.08em",                    
+       78 +                  borderBottom: "1px solid var(--border)",    
+       79 +                }}                                            
+       80 +              >                                               
+       81 +                <div className="flex-1">Student</div>         
+       82 +                <div className="w-[130px]">Status</div>       
+       83 +                <div className="w-[86px] text-right">Score</di
+          +v>                                                            
+       84 +                <div className="w-[22px]" />                  
+       85 +              </div>                                          
+       86 +                                                              
+       87 +              {students.map(({ name }) => {                   
+       88 +                const status = getStatus(results, name);      
+       89 +                const total = getTotal(results, name);        
+       90 +                const isMarked = status === "Marked";         
+       91 +                const avatar = studentAvatarColors(name);     
+       92 +                                                              
+       93 +                return (                                      
+       94                    <Link
+       95 +                    key={name}                                
+       96                      href={`/student/${encodeURIComponent(name)
+           }`}
+       46 -                    className="flex justify-between items-cent
+          -er border rounded px-4 py-3 hover:bg-black/[.03]"             
+       97 +                    className="flex items-center gap-4 px-[22p
+          +x] py-[18px] transition-colors hover:bg-black/[.025]"         
+       98 +                    style={{ borderBottom: "1px solid rgba(42,
+          +35,32,0.05)" }}                                               
+       99                    >
+       48 -                    <span>{name}</span>                       
+       49 -                    <span>{status}</span>                     
+       50 -                    <span>{total ? `${total.awarded}/${total.m
+          -ax}` : "–"}</span>                                            
+      100 +                    <div                                      
+      101 +                      className="flex h-[42px] w-[42px] flex-s
+          +hrink-0 items-center justify-center rounded-full text-base fon
+          +t-bold"                                                       
+      102 +                      style={{ background: avatar.bg, color: a
+          +vatar.color }}                                                
+      103 +                    >                                         
+      104 +                      {studentInitial(name)}                  
+      105 +                    </div>                                    
+      106 +                    <div className="min-w-0 flex-1">          
+      107 +                      <div className="text-[16.5px] font-bold"
+          +>{name}</div>                                                 
+      108 +                      <div className="text-[13px] font-medium"
+          + style={{ color: "var(--muted)" }}>                           
+      109 +                        {QUESTIONS_PER_STUDENT} responses     
+      110 +                      </div>                                  
+      111 +                    </div>                                    
+      112 +                    <div className="w-[130px]">               
+      113 +                      <StatusPill marked={isMarked} />        
+      114 +                    </div>                                    
+      115 +                    <div                                      
+      116 +                      className="w-[86px] text-right font-bold
+          +"                                                             
+      117 +                      style={{                                
+      118 +                        fontSize: isMarked ? "17px" : "16px", 
+      119 +                        color: isMarked ? "var(--accent)" : "#
+          +c9b59c",                                                      
+      120 +                        fontVariantNumeric: "tabular-nums",   
+      121 +                      }}                                      
+      122 +                    >                                         
+      123 +                      {total ? `${total.awarded} / ${total.max
+          +}` : `– / –`}                                                 
+      124 +                    </div>                                    
+      125 +                    <div className="w-[22px] text-right text-x
+          +l" style={{ color: "#c9b59c" }}>                              
+      126 +                      ›                                       
+      127 +                    </div>                                    
+      128                    </Link>
+       52 -                </li>                                         
+       53 -              );                                              
+       54 -            })}                                               
+       55 -          </ul>                                               
+      129 +                );                                            
+      130 +              })}                                             
+      131 +            </div>                                            
+      132 +          </>                                                 
+      133          )}
+      134        </div>
+      135      </main>
+      136    );
+      137  }
+      138 +                                                              
+      139 +function StatTile({ value, label }: { value: number; label: st
+          +ring }) {                                                     
+      140 +  return (                                                    
+      141 +    <div                                                      
+      142 +      className="flex-1 rounded-lg px-[18px] py-3.5"          
+      143 +      style={{ background: "var(--card)", border: "1px solid v
+          +ar(--border)" }}                                              
+      144 +    >                                                         
+      145 +      <div className="text-2xl font-extrabold">{value}</div>  
+      146 +      <div className="text-[13px] font-medium" style={{ color:
+          + "var(--muted)" }}>                                           
+      147 +        {label}                                               
+      148 +      </div>                                                  
+      149 +    </div>                                                    
+      150 +  );                                                          
+      151 +}                                                             
+      152 +                                                              
+      153 +function StatusPill({ marked }: { marked: boolean }) {        
+      154 +  if (marked) {                                               
+      155 +    return (                                                  
+      156 +      <span                                                   
+      157 +        className="inline-flex items-center gap-1.5 rounded-md
+          + px-[11px] py-[5px] text-[12.5px] font-bold"                  
+      158 +        style={{ color: "#4e7048", background: "#e6efe2" }}   
+      159 +      >                                                       
+      160 +        ✓ Marked                                              
+      161 +      </span>                                                 
+      162 +    );                                                        
+      163 +  }                                                           
+      164 +  return (                                                    
+      165 +    <span                                                     
+      166 +      className="inline-flex items-center gap-1.5 rounded-md p
+          +x-[11px] py-1 text-[12.5px] font-bold"                        
+      167 +      style={{ color: "var(--muted-strong)", border: "1px soli
+          +d rgba(42,35,32,0.14)" }}                                     
+      168 +    >                                                         
+      169 +      Not marked                                              
+      170 +    </span>                                                   
+      171 +  );                                                          
+      172 +}                                                             
+      173 +                                                              
+      174 +function LoadingCard({ message }: { message: string }) {      
+      175 +  return (                                                    
+      176 +    <div                                                      
+      177 +      className="rounded-[10px] px-[22px] py-8 text-center tex
+          +t-[15px] font-medium"                                         
+      178 +      style={{ background: "var(--card)", border: "1px solid v
+          +ar(--border)", color: "var(--muted)" }}                       
+      179 +    >                                                         
+      180 +      {message}                                               
+      181 +    </div>                                                    
+      182 +  );                                                          
+      183 +}                                                             
+      184 +                                                              
+      185 +function ErrorCard({ message }: { message: string }) {        
+      186 +  return (                                                    
+      187 +    <div                                                      
+      188 +      className="rounded-[10px] px-[22px] py-8 text-center tex
+          +t-[15px] font-semibold"                                       
+      189 +      style={{ background: "#fbecd1", border: "1px solid rgba(
+          +138,100,0,0.28)", color: "var(--warning-fg)" }}               
+      190 +    >                                                         
+      191 +      {message}                                               
+      192 +    </div>                                                    
+      193 +  );                                                          
+      194 +}                                                             
+
+⏺ Now Screen 2 (app/student/[name]/page.tsx).
+
+⏺ Write(marking-tool/app/student/[name]/page.tsx)
+  ⎿  Added 260 lines, removed 71 lines
+       7  import { getTotal } from "@/lib/state/selectors";
+       8  import { gradeStudent } from "@/lib/state/gradeStudent";
+       9  import type { StudentSubmission } from "@/lib/exam/loadExam";
+      10 +import { studentAvatarColors, studentInitial } from "@/lib/ui/s
+         +tudentAvatar";                                                 
+      11  
+      12  // Screen 2: one student's 8 question cards. Loads the submissi
+          on once and
+      13  // drops it into the grading store (INIT_EXAM), then reads ever
+          ything back
+     ...
+      53  
+      54    if (notFound) {
+      55      return (
+      55 -      <main className="flex flex-1 flex-col items-center p-16">
+      56 -        <p>Student not found.</p>                              
+      57 -        <Link href="/" className="underline mt-4">             
+      58 -          Return                                               
+      59 -        </Link>                                                
+      60 -      </main>                                                  
+      56 +      <EmptyScreen message="Student not found." />             
+      57      );
+      58    }
+      59  
+      60    if (loadError) {
+      61      return (
+      66 -      <main className="flex flex-1 flex-col items-center p-16">
+      67 -        <p>Could not load this student. Try refreshing.</p>    
+      68 -        <Link href="/" className="underline mt-4">             
+      69 -          Return                                               
+      70 -        </Link>                                                
+      71 -      </main>                                                  
+      62 +      <EmptyScreen message="Could not load this student. Try re
+         +freshing." />                                                  
+      63      );
+      64    }
+      65  
+      66    const questionResults = results[name];
+      67    const total = getTotal(results, name);
+      68 +  const alreadyMarked = Boolean(total) && total!.awarded + tota
+         +l!.max > 0 &&                                                  
+      69 +    questionResults &&                                         
+      70 +    Object.values(questionResults).every(                      
+      71 +      (q) => q.status === "no_submission" || q.mark !== null   
+      72 +    ) &&                                                       
+      73 +    !isGradingThisStudent;                                     
+      74  
+      75    // Kicks off the grading loop for this student. gradeStudent 
+          dispatches
+      76    // START_GRADING, one QUESTION_GRADED per answered question, 
+          then
+     ...
+       82      gradeStudent(name, Object.values(questionResults), dispatc
+           h);
+       83    }
+       84  
+       85 +  const avatar = studentAvatarColors(name);                   
+       86 +                                                              
+       87    return (
+       89 -    <main className="flex flex-1 flex-col items-center p-16"> 
+       90 -      <div className="w-full max-w-2xl">                      
+       91 -        <div className="flex justify-between items-center mb-6
+          -">                                                            
+       92 -          <h1 className="text-2xl font-semibold">{name}</h1>  
+       93 -          <Link href="/" className="underline">               
+       94 -            Return                                            
+       95 -          </Link>                                             
+       96 -        </div>                                                
+       88 +    <main className="flex flex-1 justify-center px-6 pt-10">  
+       89 +      <div className="w-full max-w-[820px] pb-24">            
+       90 +        <Link                                                 
+       91 +          href="/"                                            
+       92 +          className="mb-4 inline-flex items-center gap-1.5 tex
+          +t-sm font-semibold no-underline"                              
+       93 +          style={{ color: "var(--muted)" }}                   
+       94 +        >                                                     
+       95 +          ← All submissions                                   
+       96 +        </Link>                                               
+       97  
+       98 -        {!questionResults && <p>Loading...</p>}               
+       98 +        {!questionResults && <LoadingCard message="Loading…" /
+          +>}                                                            
+       99  
+      100          {questionResults && (
+      101            <>
+      102 -            <div className="flex justify-between items-center 
+          -mb-4">                                                        
+      103 -              <button                                         
+      104 -                type="button"                                 
+      105 -                onClick={handleGradeWithAi}                   
+      106 -                disabled={isGradingThisStudent}               
+      107 -                className="border rounded px-4 py-2 disabled:o
+          -pacity-50"                                                    
+      102 +            <div className="mb-6 flex items-start gap-4">     
+      103 +              <div                                            
+      104 +                className="flex h-[54px] w-[54px] flex-shrink-
+          +0 items-center justify-center rounded-full text-xl font-bold" 
+      105 +                style={{ background: avatar.bg, color: avatar.
+          +color }}                                                      
+      106                >
+      109 -                Grade with AI                                 
+      110 -              </button>                                       
+      111 -              {total && (                                     
+      112 -                <p className="text-sm">                       
+      113 -                  Total: {total.awarded} / {total.max}        
+      114 -                </p>                                          
+      115 -              )}                                              
+      116 -            </div>                                            
+      117 -                                                              
+      118 -            {isGradingThisStudent && gradingProgress && (     
+      119 -              <div className="mb-4">                          
+      120 -                <p className="text-sm mb-1">                  
+      121 -                  Grading {gradingProgress.done} of {gradingPr
+          -ogress.total}...                                              
+      122 -                </p>                                          
+      123 -                <div className="w-full h-2 bg-gray-200 rounded
+          - overflow-hidden">                                            
+      124 -                  <div                                        
+      125 -                    className="h-2 bg-blue-500 transition-all 
+          -duration-300"                                                 
+      126 -                    style={{                                  
+      127 -                      width: `${(gradingProgress.done / gradin
+          -gProgress.total) * 100}%`,                                    
+      128 -                    }}                                        
+      129 -                  />                                          
+      107 +                {studentInitial(name)}                        
+      108 +              </div>                                          
+      109 +              <div className="flex-1">                        
+      110 +                <h1 className="m-0 mb-1 text-[27px] font-extra
+          +bold" style={{ letterSpacing: "-0.015em" }}>                  
+      111 +                  {name}                                      
+      112 +                </h1>                                         
+      113 +                <div className="text-sm font-medium" style={{ 
+          +color: "var(--muted)" }}>                                     
+      114 +                  Year 12 Mathematics · Response Marking      
+      115                  </div>
+      116                </div>
+      132 -            )}                                                
+      117 +              <div className="text-right">                    
+      118 +                <div                                          
+      119 +                  className="mb-[3px] text-[11px] font-bold up
+          +percase"                                                      
+      120 +                  style={{ color: "var(--muted-strong)", lette
+          +rSpacing: "0.1em" }}                                          
+      121 +                >                                             
+      122 +                  Total                                       
+      123 +                </div>                                        
+      124 +                <div                                          
+      125 +                  className="text-[30px] font-extrabold"      
+      126 +                  style={{                                    
+      127 +                    letterSpacing: "-0.02em",                 
+      128 +                    fontVariantNumeric: "tabular-nums",       
+      129 +                    color: total && alreadyMarked ? "var(--acc
+          +ent)" : "#c9b59c",                                            
+      130 +                  }}                                          
+      131 +                >                                             
+      132 +                  {total ? `${total.awarded} / ${total.max}` :
+          + "– / –"}                                                     
+      133 +                </div>                                        
+      134 +              </div>                                          
+      135 +            </div>                                            
+      136  
+      134 -            <ul className="flex flex-col gap-4">              
+      137 +            <ul className="m-0 flex list-none flex-col gap-0 p
+          +-0">                                                          
+      138                {Object.values(questionResults).map((question) =
+           > {
+      139                  const isNoSubmission = question.status === "no
+           _submission";
+      137 -                const markDisplay =                           
+      138 -                  question.mark !== null                      
+      139 -                    ? question.mark                           
+      140 -                    : isNoSubmission                          
+      141 -                      ? "0"                                   
+      142 -                      : "–";                                  
+      140 +                const hasMark = question.mark !== null;       
+      141 +                const markDisplay = isNoSubmission ? "0" : has
+          +Mark ? question.mark : "–";                                   
+      142 +                const num = `Q${question.questionId.replace(/\
+          +D/g, "") || ""}`;                                             
+      143 +                                                              
+      144                  return (
+      145                    <li
+      146                      key={question.questionId}
+      146 -                    className={`border rounded p-4 ${isNoSubmi
+          -ssion ? "opacity-50" : ""}`}                                  
+      147 +                    className="mb-3.5 rounded-[10px] p-[22px]"
+      148 +                    style={{                                  
+      149 +                      background: isNoSubmission ? "#f6eee0" :
+          + "var(--card)",                                               
+      150 +                      border: question.needsReview            
+      151 +                        ? "1px solid rgba(138,100,0,0.28)"    
+      152 +                        : "1px solid var(--border)",          
+      153 +                      boxShadow: "0 1px 2px rgba(78,52,30,0.04
+          +), 0 6px 18px rgba(78,52,30,0.045)",                          
+      154 +                      opacity: isNoSubmission ? 0.72 : 1,     
+      155 +                    }}                                        
+      156                    >
+      148 -                    <p className="font-medium">{question.quest
+          -ion}</p>                                                      
+      149 -                    <p className="text-sm mt-1">Rubric: {quest
+          -ion.rubric}</p>                                               
+      150 -                    <p className="text-sm mt-1">              
+      151 -                      Response:{" "}                          
+      152 -                      {isNoSubmission ? "No submission" : ques
+          -tion.response}                                                
+      153 -                    </p>                                      
+      154 -                    <p className="text-sm mt-1">              
+      155 -                      Mark: {markDisplay} / {question.maxMarks
+          -}                                                             
+      156 -                      {question.needsReview && (              
+      157 -                        <span className="ml-2 text-red-600 fon
+          -t-medium">                                                    
+      158 -                          Needs review                        
+      157 +                    <div className="flex items-start gap-4">  
+      158 +                      <div className="min-w-0 flex-1">        
+      159 +                        <div className="mb-2 flex flex-wrap it
+          +ems-center gap-2.5">                                          
+      160 +                          <span                               
+      161 +                            className="rounded px-[9px] py-[3p
+          +x] text-xs font-extrabold"                                    
+      162 +                            style={{ color: "var(--accent)", b
+          +ackground: "#fce4e3", letterSpacing: "0.06em" }}              
+      163 +                          >                                   
+      164 +                            {num || question.questionId}      
+      165 +                          </span>                             
+      166 +                          {question.needsReview && (          
+      167 +                            <span                             
+      168 +                              className="rounded px-2.5 py-[3p
+          +x] text-xs font-bold"                                         
+      169 +                              style={{ color: "var(--warning-f
+          +g)", background: "var(--warning-bg)" }}                       
+      170 +                            >                                 
+      171 +                              ⚠ Needs review                  
+      172 +                            </span>                           
+      173 +                          )}                                  
+      174 +                          {isNoSubmission && (                
+      175 +                            <span                             
+      176 +                              className="rounded px-2.5 py-[3p
+          +x] text-xs font-bold"                                         
+      177 +                              style={{ color: "var(--muted)", 
+          +background: "#ece4d8" }}                                      
+      178 +                            >                                 
+      179 +                              No submission                   
+      180 +                            </span>                           
+      181 +                          )}                                  
+      182 +                        </div>                                
+      183 +                        <div                                  
+      184 +                          className="text-[16.5px] font-bold" 
+      185 +                          style={{ lineHeight: 1.4, color: isN
+          +oSubmission ? "#8e8172" : "var(--foreground)" }}              
+      186 +                        >                                     
+      187 +                          {question.question}                 
+      188 +                        </div>                                
+      189 +                      </div>                                  
+      190 +                      <div                                    
+      191 +                        className="flex flex-shrink-0 flex-col
+          + items-center justify-center gap-px rounded-lg px-1.5 py-2.5" 
+      192 +                        style={{                              
+      193 +                          minWidth: "74px",                   
+      194 +                          background: isNoSubmission ? "#efe7d
+          +9" : "#fffaf3",                                               
+      195 +                          border: "1px solid rgba(42,35,32,0.0
+          +7)",                                                          
+      196 +                        }}                                    
+      197 +                      >                                       
+      198 +                        <span                                 
+      199 +                          className="text-[23px] font-extrabol
+          +d"                                                            
+      200 +                          style={{                            
+      201 +                            fontVariantNumeric: "tabular-nums"
+          +,                                                             
+      202 +                            color: isNoSubmission ? "#bcae9c" 
+          +: hasMark ? "var(--accent)" : "#c9b59c",                      
+      203 +                          }}                                  
+      204 +                        >                                     
+      205 +                          {markDisplay}                       
+      206                          </span>
+      160 -                      )}                                      
+      161 -                    </p>                                      
+      207 +                        <span className="text-sm font-semibold
+          +" style={{ color: "#bcae9c" }}>                               
+      208 +                          / {question.maxMarks}               
+      209 +                        </span>                               
+      210 +                      </div>                                  
+      211 +                    </div>                                    
+      212 +                                                              
+      213 +                    <div className="mt-3.5">                  
+      214 +                      <div                                    
+      215 +                        className="mb-1 text-[11px] font-bold 
+          +uppercase"                                                    
+      216 +                        style={{ color: "var(--muted-strong)",
+          + letterSpacing: "0.08em" }}                                   
+      217 +                      >                                       
+      218 +                        Rubric                                
+      219 +                      </div>                                  
+      220 +                      <div className="text-[13.5px]" style={{ 
+          +lineHeight: 1.5, color: "#a3917d" }}>                         
+      221 +                        {question.rubric}                     
+      222 +                      </div>                                  
+      223 +                    </div>                                    
+      224 +                                                              
+      225 +                    <div className="mt-3.5">                  
+      226 +                      <div                                    
+      227 +                        className="mb-1.5 text-[11px] font-bol
+          +d uppercase"                                                  
+      228 +                        style={{ color: "var(--muted-strong)",
+          + letterSpacing: "0.08em" }}                                   
+      229 +                      >                                       
+      230 +                        Response                              
+      231 +                      </div>                                  
+      232 +                      <div                                    
+      233 +                        className="rounded-lg px-4 py-[13px] t
+          +ext-[15px] whitespace-pre-wrap"                               
+      234 +                        style={{                              
+      235 +                          lineHeight: 1.55,                   
+      236 +                          color: isNoSubmission ? "#b4a590" : 
+          +"#3a322c",                                                    
+      237 +                          background: isNoSubmission ? "transp
+          +arent" : "#fffaf3",                                           
+      238 +                          border: "1px solid rgba(42,35,32,0.0
+          +6)",                                                          
+      239 +                          fontStyle: isNoSubmission ? "italic"
+          + : "normal",                                                  
+      240 +                        }}                                    
+      241 +                      >                                       
+      242 +                        {isNoSubmission ? "No response was sub
+          +mitted for this question." : question.response}               
+      243 +                      </div>                                  
+      244 +                    </div>                                    
+      245 +                                                              
+      246                      {question.feedback && (
+      163 -                      <p className="text-sm mt-1">Feedback: {q
+          -uestion.feedback}</p>                                         
+      247 +                      <div className="mt-3.5">                
+      248 +                        <div                                  
+      249 +                          className="mb-1.5 text-[11px] font-b
+          +old uppercase"                                                
+      250 +                          style={{ color: "var(--muted-strong)
+          +", letterSpacing: "0.08em" }}                                 
+      251 +                        >                                     
+      252 +                          Feedback                            
+      253 +                        </div>                                
+      254 +                        <div className="text-[13.5px]" style={
+          +{ lineHeight: 1.5, color: "#a3917d" }}>                       
+      255 +                          {question.feedback}                 
+      256 +                        </div>                                
+      257 +                      </div>                                  
+      258                      )}
+      259                    </li>
+      260                  );
+      261                })}
+      262              </ul>
+      263 +                                                              
+      264 +            <div                                              
+      265 +              className="fixed inset-x-0 bottom-0 px-6 py-3.5"
+      266 +              style={{                                        
+      267 +                background: "rgba(255,250,243,0.92)",         
+      268 +                backdropFilter: "blur(8px)",                  
+      269 +                borderTop: "1px solid rgba(42,35,32,0.07)",   
+      270 +              }}                                              
+      271 +            >                                                 
+      272 +              <div className="mx-auto max-w-[820px]">         
+      273 +                {isGradingThisStudent && gradingProgress ? (  
+      274 +                  <div>                                       
+      275 +                    <div className="mb-[9px] flex items-center
+          + justify-between">                                            
+      276 +                      <span className="text-[14.5px] font-bold
+          +">                                                            
+      277 +                        Grading {Math.min(gradingProgress.done
+          + + 1, gradingProgress.total)} of{" "}                         
+      278 +                        {gradingProgress.total}…              
+      279 +                      </span>                                 
+      280 +                      <span className="text-[13px] font-semibo
+          +ld" style={{ color: "var(--muted)" }}>                        
+      281 +                        {Math.round((gradingProgress.done / gr
+          +adingProgress.total) * 100)}%                                 
+      282 +                      </span>                                 
+      283 +                    </div>                                    
+      284 +                    <div className="h-[9px] overflow-hidden ro
+          +unded" style={{ background: "#e4e1db" }}>                     
+      285 +                      <div                                    
+      286 +                        className="h-full rounded transition-a
+          +ll duration-300"                                              
+      287 +                        style={{                              
+      288 +                          width: `${(gradingProgress.done / gr
+          +adingProgress.total) * 100}%`,                                
+      289 +                          background: "var(--accent)",        
+      290 +                          backgroundImage:                    
+      291 +                            "linear-gradient(45deg, rgba(255,2
+          +55,255,0.18) 25%, transparent 25%, transparent 50%, rgba(255,2
+          +55,255,0.18) 50%, rgba(255,255,255,0.18) 75%, transparent 75%)
+          +",                                                            
+      292 +                          backgroundSize: "28px 28px",        
+      293 +                          animation: "bar-stripe 0.7s linear i
+          +nfinite",                                                     
+      294 +                        }}                                    
+      295 +                      />                                      
+      296 +                    </div>                                    
+      297 +                  </div>                                      
+      298 +                ) : (                                         
+      299 +                  <div className="flex items-center justify-en
+          +d gap-3">                                                     
+      300 +                    <Link                                     
+      301 +                      href="/"                                
+      302 +                      className="rounded-lg px-[22px] py-3 tex
+          +t-[15px] font-bold no-underline"                              
+      303 +                      style={{                                
+      304 +                        background: "var(--card)",            
+      305 +                        border: "1px solid rgba(42,35,32,0.12)
+          +",                                                            
+      306 +                        color: "var(--foreground)",           
+      307 +                      }}                                      
+      308 +                    >                                         
+      309 +                      Return                                  
+      310 +                    </Link>                                   
+      311 +                    <button                                   
+      312 +                      type="button"                           
+      313 +                      onClick={handleGradeWithAi}             
+      314 +                      className="cursor-pointer rounded-lg bor
+          +der-none px-6 py-3 text-[15px] font-bold text-white"          
+      315 +                      style={{ background: "var(--accent)", bo
+          +xShadow: "0 4px 14px rgba(209,26,51,0.3)" }}                  
+      316 +                    >                                         
+      317 +                      {alreadyMarked ? "Re-grade with AI" : "G
+          +rade with AI"}                                                
+      318 +                    </button>                                 
+      319 +                  </div>                                      
+      320 +                )}                                            
+      321 +              </div>                                          
+      322 +            </div>                                            
+      323            </>
+      324          )}
+      325        </div>
+      326      </main>
+      327    );
+      328  }
+      329 +                                                              
+      330 +function LoadingCard({ message }: { message: string }) {      
+      331 +  return (                                                    
+      332 +    <div                                                      
+      333 +      className="rounded-[10px] px-[22px] py-8 text-center tex
+          +t-[15px] font-medium"                                         
+      334 +      style={{ background: "var(--card)", border: "1px solid v
+          +ar(--border)", color: "var(--muted)" }}                       
+      335 +    >                                                         
+      336 +      {message}                                               
+      337 +    </div>                                                    
+      338 +  );                                                          
+      339 +}                                                             
+      340 +                                                              
+      341 +function EmptyScreen({ message }: { message: string }) {      
+      342 +  return (                                                    
+      343 +    <main className="flex flex-1 justify-center px-6 pt-10">  
+      344 +      <div className="w-full max-w-[820px]">                  
+      345 +        <div                                                  
+      346 +          className="rounded-[10px] px-[22px] py-10 text-cente
+          +r"                                                            
+      347 +          style={{ background: "var(--card)", border: "1px sol
+          +id var(--border)" }}                                          
+      348 +        >                                                     
+      349 +          <p className="m-0 mb-4 text-[15px] font-semibold" st
+          +yle={{ color: "var(--foreground)" }}>                         
+      350 +            {message}                                         
+      351 +          </p>                                                
+      352 +          <Link                                               
+      353 +            href="/"                                          
+      354 +            className="inline-block rounded-lg px-5 py-2.5 tex
+          +t-sm font-bold text-white no-underline"                       
+      355 +            style={{ background: "var(--accent)" }}           
+      356 +          >                                                   
+      357 +            Return                                            
+      358 +          </Link>                                             
+      359 +        </div>                                                
+      360 +      </div>                                                  
+      361 +    </main>                                                   
+      362 +  );                                                          
+      363 +}                                                             
+
+⏺ Let me clean up that awkward alreadyMarked calculation.
+
+⏺ Update(marking-tool/app/student/[name]/page.tsx)
+  ⎿  Added 5 lines, removed 5 lines
+      65  
+      66    const questionResults = results[name];
+      67    const total = getTotal(results, name);
+      68 -  const alreadyMarked = Boolean(total) && total!.awarded + tota
+         -l!.max > 0 &&                                                  
+      69 -    questionResults &&                                         
+      70 -    Object.values(questionResults).every(                      
+      68 +  const alreadyMarked =                                        
+      69 +    !isGradingThisStudent &&                                   
+      70 +    Boolean(questionResults) &&                                
+      71 +    Object.values(questionResults!).every(                     
+      72        (q) => q.status === "no_submission" || q.mark !== null
+      72 -    ) &&                                                       
+      73 -    !isGradingThisStudent;                                     
+      73 +    );                                                         
+      74  
+      75    // Kicks off the grading loop for this student. gradeStudent 
+          dispatches
+      76    // START_GRADING, one QUESTION_GRADED per answered question, 
+          then
+
+⏺ Update(marking-tool/app/student/[name]/page.tsx)
+  ⎿  Removed 1 line
+      139                  const isNoSubmission = question.status === "no
+           _submission";
+      140                  const hasMark = question.mark !== null;
+      141                  const markDisplay = isNoSubmission ? "0" : has
+           Mark ? question.mark : "–";
+      142 -                const num = `Q${question.questionId.replace(/\
+          -D/g, "") || ""}`;                                             
+      142  
+      143                  return (
+      144                    <li
+
+⏺ Update(marking-tool/app/student/[name]/page.tsx)
+  ⎿  Added 1 line, removed 1 line
+      160                              className="rounded px-[9px] py-[3p
+           x] text-xs font-extrabold"
+      161                              style={{ color: "var(--accent)", b
+           ackground: "#fce4e3", letterSpacing: "0.06em" }}
+      162                            >
+      163 -                            {num || question.questionId}      
+      163 +                            {question.questionId}             
+      164                            </span>
+      165                            {question.needsReview && (
+      166                              <span
+
+⏺ Now let's write the reflection doc and run verification.
+
+⏺ Write(marking-tool/reflection.md)
+  ⎿  Wrote 7 lines to marking-tool/reflection.md
+      1 # Reflection
+      3 This tool lets a tutor open one Year 12 maths exam, grade all fou
+        r students with AI, and read the marks and feedback. It is not me
+        ut gets a **Needs review** badge, so the tutor's eye goes straigh
+        t to the response they still need to check by hand. A mark is alw
+        amps it, so a bad model reply can never show up as a wild or nega
+        tive number.
+      5 The biggest risk with a tool like this is a confident, wrong mark
+        . That is why `needs_review` exists everywhere a result could be
+        ght, and gen
+     … +14 lines (ctrl+o to expand)
+
+⏺ Bash(npm run lint 2>&1 | tail -60)
+  ⎿  > marking-tool@0.1.0 lint
+     > eslint
+
+⏺ Lint clean.
+
+⏺ Bash(npx tsc --noEmit 2>&1 | tail -80)
+  ⎿  (No output)
+
+⏺ Typecheck clean.
+
+⏺ Bash(npm test -- --run 2>&1 | tail -60)
+  ⎿  > marking-tool@0.1.0 test
+     > vitest run --run
+     … +32 lines (ctrl+o to expand)
+
+⏺ All 40 tests pass, unaffected by UI-only changes.
+
+⏺ Bash(npm run build 2>&1 | tail -80)
+  ⎿  > marking-tool@0.1.0 build
+     > next build
+     … +31 lines (ctrl+o to expand)
+
+⏺ Build succeeds. Let me quickly spot-check the two page files render sensibly
+  by starting the dev server and curling, since I don't have a browser tool this
+  session.
+
+⏺ Bash((npm run dev > /tmp/dev.log 2>&1 &) ; sleep 3; curl -s
+      http://localhost:3000/ | grep -o "Year 12 Mathematics" | head -1; curl -s
+      http://localhost:3000/ -o /dev/…)
+  ⎿  Year 12 Mathematics
+     200
+
+⏺ Bash(curl -s http://localhost:3000/api/submissions | python3 -c "import
+      json,sys; print(json.load(sys.stdin))")
+  ⎿  {'students': [{'name': 'Aisha'}, {'name': 'Ben'}, {'name': 'Chen'}, {'
+     name': 'Diego'}]}
+
+⏺ Bash(curl -s http://localhost:3000/student/Aisha -o /dev/null -w
+      "%{http_code}\n"; curl -s http://localhost:3000/student/NoSuchStudent -o
+      /dev/null -w "%{http_code}\…)
+  ⎿  200
+     200
+⏺ Dev server confirmed both screens render and build/lint/typecheck/tests all
+  pass. Cleaning up the background server and wrapping up.
+
+⏺ Bash(pkill -f "node.*next" 2>/dev/null; true)
+  ⎿  (No output)
+
+⏺ UI-02 is implemented. Report per CLAUDE.md §9:
+
+  Built:
+  - app/layout.tsx — swapped Geist for Hanken Grotesk, fixed the leftover
+    default page title/description
+  - app/globals.css — replaced default theme vars with the cream/red palette
+    from the reference design, dropped the unused dark-mode block
+  - app/page.tsx — Screen 1 restyled: eyebrow + title, stat tiles, themed
+    submission list with avatars, status pills, score, themed loading/error
+    states
+  - app/student/[name]/page.tsx — Screen 2 restyled: avatar header, question
+    cards with Q-number badge, Needs review / No submission badges,
+    rubric/response/feedback blocks, mark box, sticky footer with striped
+    progress bar or Return/Grade buttons, themed not-found/load-error states
+  - lib/ui/studentAvatar.ts (new) — pure helper picking a stable avatar
+    color+initial per student name
+  - reflection.md (new, repo root — this repo has no docs/ folder, so I matched
+    journal.md's existing location rather than the ticket's literal path)
+
+  Verified:
+  - npm run lint — clean
+  - npx tsc --noEmit — clean
+  - npm test — 40/40 passed (unchanged, this ticket touched no logic)
+  - npm run build — succeeded
+  - Started the dev server and curled /, /api/submissions, /student/Aisha,
+    /student/NoSuchStudent — all respond correctly
+
+  Not done:
+  - No browser tool available this session, so I could not click through it
+    visually myself. Please do one manual pass to confirm the badges, progress
+    bar animation, and hover states look right.
+  - Per CLAUDE.md §3, this still needs the blind-review step (fresh context,
+    ticket + diff) before it can be marked done — I have not done that here.
+
+  Check manually: the needs-review badge and "Could not grade this response."
+  feedback text on a real failed grading call; the striped progress bar
+  animation while grading; hover states on the Screen 1 rows and buttons.
+
+  Risks: the avatar color hash is a new small piece of logic — collisions are
+  fine (same palette can repeat), but it's untested since the ticket's test
+  table doesn't call for avatar tests (presentation only, "Invariants touched:
+  none").
+
+❯ <ide_opened_file>The user opened the file
+  /Users/noah.carnegie/Documents/1910/marking-tool/UI-02-final-ui.md in the
+  IDE. This may or may not be related to the current task.</ide_opened_file>
+
+❯ read and execute UI-02-final-ui.md, make sure global background is no longer
+  dark.
+
+  Searched for 1 pattern, read 1 file (ctrl+o to expand)
+
+⏺ Write(marking-tool/lib/ui/studentAvatar.ts)
+  ⎿  Added 14 lines, removed 12 lines
+       1 -// Picks a display color for a student's initial-circle avatar.
+         - Pure and                                                      
+       2 -// deterministic: the same name always gets the same color, wit
+         -h no stored                                                    
+       3 -// per-student config needed. Palette matches the design refere
+         -nce's four                                                     
+       4 -// demo students (red, tan, blue, green), cycled by a stable ha
+         -sh so a 5th                                                    
+       5 -// name doesn't crash, it just reuses a color.                 
+       6 -const AVATAR_PALETTE: { bg: string; color: string }[] = [      
+       7 -  { bg: "#fce4e3", color: "#c0263a" },                         
+       8 -  { bg: "#f3e6d4", color: "#a06a38" },                         
+       9 -  { bg: "#e3eaf2", color: "#486585" },                         
+      10 -  { bg: "#e6efe2", color: "#4e7048" },                         
+      11 -];                                                             
+       1 +// Avatar colour pair for each student's initial-circle. The de
+         +sign ticket                                                    
+       2 +// (UI-02-final-ui.md §1) pins exact colours for the four stude
+         +nts in the                                                     
+       3 +// real data set. A name outside that set falls back to a cycli
+         +ng palette                                                     
+       4 +// so the app never crashes if the data changes, but the four f
+         +ixed pairs                                                     
+       5 +// are what the design actually specifies.                     
+       6 +const FIXED_AVATARS: Record<string, { bg: string; color: string
+         + }> = {                                                        
+       7 +  Aisha: { bg: "#FCE4E3", color: "#C0263A" },                  
+       8 +  Ben: { bg: "#F3E6D4", color: "#A06A38" },                    
+       9 +  Chen: { bg: "#E3EAF2", color: "#486585" },                   
+      10 +  Diego: { bg: "#E6EFE2", color: "#4E7048" },                  
+      11 +};                                                             
+      12  
+      13 +const FALLBACK_PALETTE: { bg: string; color: string }[] = Objec
+         +t.values(FIXED_AVATARS);                                       
+      14 +                                                               
+      15  function hashName(name: string): number {
+      16    let hash = 0;
+      17    for (let i = 0; i < name.length; i++) {
+     ...
+      22  }
+      23  
+      24  export function studentAvatarColors(name: string): { bg: string
+          ; color: string } {
+      23 -  return AVATAR_PALETTE[hashName(name) % AVATAR_PALETTE.length]
+         -;                                                              
+      25 +  return FIXED_AVATARS[name] ?? FALLBACK_PALETTE[hashName(name)
+         + % FALLBACK_PALETTE.length];                                   
+      26  }
+      27  
+      28  export function studentInitial(name: string): string {
+
+⏺ Now globals.css with the full exact token set, hover rule, markIn keyframes,
+  and an explicit light color-scheme to guarantee no dark background.
+
+⏺ Write(marking-tool/app/globals.css)
+  ⎿  Added 38 lines, removed 6 lines
+       1  @import "tailwindcss";
+       2  
+       3  /*
+       4 -  Theme tokens taken from the design reference the human suppli
+         -ed                                                             
+       5 -  (public/Maths Exam Marking Tool.html): a warm cream base with
+         - a single                                                      
+       6 -  deep red accent, used only for primary actions and marks (tic
+         -ket UI-02                                                      
+       7 -  acceptance criterion).                                       
+       4 +  Theme tokens from UI-02-final-ui.md §1 — the exact colours fr
+         +om the                                                         
+       5 +  design mockup (public/Maths Exam Marking Tool.html). Do not i
+         +nvent new                                                      
+       6 +  colours; every value the app needs lives here.               
+       7  */
+       8  :root {
+       9 +  color-scheme: light;                                         
+      10    --background: #fffaf3;
+      11    --card: #fff2db;
+      12    --card-strong: #ffe5bf;
+      13    --foreground: #2a2320;
+      14    --muted: #9a8c7c;
+      15    --muted-strong: #b49a80;
+      16 -  --border: rgba(42, 35, 32, 0.07);                            
+      16 +  --eyebrow: #b07a4a;                                          
+      17 +  --rubric-text: #a3917d;                                      
+      18 +  --response-text: #3a322c;                                    
+      19 +  --border: rgba(42, 35, 32, 0.06);                            
+      20 +  --hover-bg: #eceae6;                                         
+      21    --accent: #d11a33;
+      22    --accent-hover: #b8142c;
+      19 -  --warning-bg: #fbecd1;                                       
+      23 +  --link-hover: #a8142a;                                       
+      24 +  --dash: #c9b59c;                                             
+      25 +  --max-text: #bcae9c;                                         
+      26 +  --warning-bg: #fbeccb;                                       
+      27    --warning-fg: #8a6400;
+      28 +  --warning-border: rgba(138, 100, 0, 0.28);                   
+      29  }
+      30  
+      31  @theme inline {
+     ...
+      34    --font-sans: var(--font-hanken-grotesk);
+      35  }
+      36  
+      37 +html {                                                         
+      38 +  background: var(--background);                               
+      39 +}                                                              
+      40 +                                                               
+      41  body {
+      42    background: var(--background);
+      43    color: var(--foreground);
+      44    font-family: var(--font-hanken-grotesk), system-ui, sans-seri
+          f;
+      45 +  -webkit-font-smoothing: antialiased;                         
+      46  }
+      47  
+      48 +a {                                                            
+      49 +  color: var(--accent);                                        
+      50 +  text-decoration: none;                                       
+      51 +}                                                              
+      52 +a:hover {                                                      
+      53 +  color: var(--link-hover);                                    
+      54 +}                                                              
+      55 +                                                               
+      56  @keyframes bar-stripe {
+      57    from {
+      58      background-position: 0 0;
+     ...
+      61      background-position: 28px 0;
+      62    }
+      63  }
+      64 +                                                               
+      65 +@keyframes mark-in {                                           
+      66 +  from {                                                       
+      67 +    opacity: 0;                                                
+      68 +    transform: translateY(4px);                                
+      69 +  }                                                            
+      70 +  to {                                                         
+      71 +    opacity: 1;                                                
+      72 +    transform: translateY(0);                                  
+      73 +  }                                                            
+      74 +}                                                              
+
+⏺ Write(marking-tool/app/page.tsx)
+  ⎿  Added 167 lines, removed 56 lines
+       2  
+       3  import Link from "next/link";
+       4  import { useEffect, useState } from "react";
+       5 -import { useGradingState } from "@/lib/state/GradingContext";  
+       5 +import { useGradingDispatch, useGradingState } from "@/lib/stat
+         +e/GradingContext";                                             
+       6  import { getStatus, getTotal } from "@/lib/state/selectors";
+       7  import { studentAvatarColors, studentInitial } from "@/lib/ui/s
+          tudentAvatar";
+       8 +import type { StudentSubmission } from "@/lib/exam/loadExam";  
+       9  
+      10  type Submission = { name: string };
+      11  
+      11 -const QUESTIONS_PER_STUDENT = 8;                               
+      12 -                                                               
+      12  // Screen 1: the exam landing page. Lists one row per student w
+          ith their
+      14 -// marking status and total, read from the grading store (not y
+         -et touched                                                     
+      15 -// until a tutor opens that student's page).                   
+      13 +// marking status and total, read from the grading store. Loads
+         + every                                                         
+      14 +// student's full submission up front (not just names) so the "
+         +X of 8                                                         
+      15 +// answered" meta line and each student's max total can be show
+         +n before                                                       
+      16 +// the tutor opens anyone's page — both existing read APIs, no 
+         +new ones.                                                      
+      17  export default function Home() {
+      18    const { results } = useGradingState();
+      19 +  const dispatch = useGradingDispatch();                       
+      20    const [students, setStudents] = useState<Submission[] | null>
+          (null);
+      21    const [loadError, setLoadError] = useState(false);
+      22  
+      23    useEffect(() => {
+      24      fetch("/api/submissions")
+      23 -      .then((response) => response.json())                     
+      24 -      .then((body) => setStudents(body.students))              
+      25 +      .then(async (response) => {                              
+      26 +        const body = await response.json();                    
+      27 +        const list: Submission[] = body.students;              
+      28 +        setStudents(list);                                     
+      29 +                                                               
+      30 +        for (const { name } of list) {                         
+      31 +          if (results[name]) continue;                         
+      32 +          const detail = await fetch(`/api/submissions/${encode
+         +URIComponent(name)}`);                                         
+      33 +          if (!detail.ok) continue;                            
+      34 +          const submission: StudentSubmission = await detail.js
+         +on();                                                          
+      35 +          dispatch({ type: "INIT_EXAM", submission });         
+      36 +        }                                                      
+      37 +      })                                                       
+      38        .catch((error) => {
+      39          console.error("Failed to load submissions list", error)
+          ;
+      40          setLoadError(true);
+      41        });
+      42 +    // Runs once on mount; `results` is read only to skip stude
+         +nts already                                                    
+      43 +    // in the store, not to re-trigger this effect.            
+      44 +    // eslint-disable-next-line react-hooks/exhaustive-deps    
+      45    }, []);
+      46  
+      47    const markedCount = students
+      48      ? students.filter(({ name }) => getStatus(results, name) ==
+          = "Marked").length
+      49      : 0;
+      50 +  const questionsPerStudent = students                         
+      51 +    ? Object.values(results[students[0]?.name] ?? {}).length ||
+         + 8                                                             
+      52 +    : 8;                                                       
+      53  
+      54    return (
+      36 -    <main className="flex flex-1 justify-center px-6 py-10 sm:p
+         -y-16">                                                         
+      37 -      <div className="w-full max-w-[820px]">                   
+      38 -        <div className="mb-7">                                 
+      55 +    <main                                                      
+      56 +      style={{                                                 
+      57 +        minHeight: "100vh",                                    
+      58 +        width: "100%",                                         
+      59 +        background: "var(--background)",                       
+      60 +        padding: "40px 16px 64px",                             
+      61 +      }}                                                       
+      62 +    >                                                          
+      63 +      <div style={{ maxWidth: "820px", margin: "0 auto" }}>    
+      64 +        <div style={{ marginBottom: "28px" }}>                 
+      65            <div
+      40 -            className="mb-2.5 text-xs font-bold uppercase"     
+      41 -            style={{ color: "var(--muted-strong)", letterSpacin
+         -g: "0.14em" }}                                                 
+      66 +            style={{                                           
+      67 +              fontSize: "12px",                                
+      68 +              fontWeight: 700,                                 
+      69 +              letterSpacing: "0.14em",                         
+      70 +              color: "var(--eyebrow)",                         
+      71 +              textTransform: "uppercase",                      
+      72 +              marginBottom: "10px",                            
+      73 +            }}                                                 
+      74            >
+      75              Year 12 · 2026 · Paper 1
+      76            </div>
+      45 -          <h1 className="m-0 mb-1.5 text-[34px] font-extrabold"
+         - style={{ letterSpacing: "-0.02em" }}>                         
+      77 +          <h1                                                  
+      78 +            style={{                                           
+      79 +              fontSize: "34px",                                
+      80 +              fontWeight: 800,                                 
+      81 +              letterSpacing: "-0.02em",                        
+      82 +              margin: "0 0 6px",                               
+      83 +            }}                                                 
+      84 +          >                                                    
+      85              Year 12 Mathematics
+      86            </h1>
+      48 -          <p className="m-0 text-[17px]" style={{ color: "var(-
+         --muted)" }}>                                                   
+      49 -            Response Marking                                   
+      50 -          </p>                                                 
+      87 +          <p style={{ fontSize: "17px", color: "var(--muted)", 
+         +margin: 0 }}>Response Marking</p>                              
+      88          </div>
+      89  
+      90          {loadError && <ErrorCard message="Could not load submis
+          sions. Try refreshing." />}
+     ...
+       93  
+       94          {!loadError && students !== null && (
+       95            <>
+       59 -            <div className="mb-5 flex gap-2.5">               
+       96 +            <div style={{ display: "flex", gap: "10px", margin
+          +Bottom: "20px" }}>                                            
+       97                <StatTile value={students.length} label="Submiss
+           ions" />
+       98                <StatTile value={markedCount} label="Marked" />
+       62 -              <StatTile value={QUESTIONS_PER_STUDENT} label="Q
+          -uestions each" />                                             
+       99 +              <StatTile value={questionsPerStudent} label="Que
+          +stions each" />                                               
+      100              </div>
+      101  
+      102              <div
+       66 -              className="overflow-hidden rounded-[10px]"      
+      103                style={{
+      104                  background: "var(--card)",
+      105                  border: "1px solid var(--border)",
+      106 +                borderRadius: "10px",                         
+      107                  boxShadow: "0 1px 2px rgba(78,52,30,0.05), 0 1
+           0px 26px rgba(78,52,30,0.05)",
+      108 +                overflow: "hidden",                           
+      109                }}
+      110              >
+      111                <div
+       74 -                className="flex items-center px-[22px] py-3.5 
+          -text-xs font-bold uppercase"                                  
+      112                  style={{
+       76 -                  color: "var(--muted-strong)",               
+      113 +                  display: "flex",                            
+      114 +                  alignItems: "center",                       
+      115 +                  padding: "14px 22px",                       
+      116 +                  fontSize: "12px",                           
+      117 +                  fontWeight: 700,                            
+      118                    letterSpacing: "0.08em",
+      119 +                  color: "var(--muted-strong)",               
+      120 +                  textTransform: "uppercase",                 
+      121                    borderBottom: "1px solid var(--border)",
+      122                  }}
+      123                >
+       81 -                <div className="flex-1">Student</div>         
+       82 -                <div className="w-[130px]">Status</div>       
+       83 -                <div className="w-[86px] text-right">Score</di
+          -v>                                                            
+       84 -                <div className="w-[22px]" />                  
+      124 +                <div style={{ flex: 1 }}>Student</div>        
+      125 +                <div className="hidden sm:block" style={{ widt
+          +h: "130px" }}>                                                
+      126 +                  Status                                      
+      127 +                </div>                                        
+      128 +                <div style={{ width: "86px", textAlign: "right
+          +" }}>Score</div>                                              
+      129 +                <div style={{ width: "22px" }} />             
+      130                </div>
+      131  
+      132                {students.map(({ name }) => {
+     ...
+      134                  const total = getTotal(results, name);
+      135                  const isMarked = status === "Marked";
+      136                  const avatar = studentAvatarColors(name);
+      137 +                const studentQuestions = Object.values(results
+          +[name] ?? {});                                                
+      138 +                const answered = studentQuestions.filter((q) =
+          +> q.status !== "no_submission").length;                       
+      139 +                const meta = studentQuestions.length          
+      140 +                  ? `${answered} of ${studentQuestions.length}
+          + answered`                                                    
+      141 +                  : " ";                                      
+      142  
+      143                  return (
+      144                    <Link
+      145                      key={name}
+      146                      href={`/student/${encodeURIComponent(name)
+           }`}
+       97 -                    className="flex items-center gap-4 px-[22p
+          -x] py-[18px] transition-colors hover:bg-black/[.025]"         
+       98 -                    style={{ borderBottom: "1px solid rgba(42,
+          -35,32,0.05)" }}                                               
+      147 +                    className="hover:bg-[var(--hover-bg)]"    
+      148 +                    style={{                                  
+      149 +                      display: "flex",                        
+      150 +                      alignItems: "center",                   
+      151 +                      gap: "16px",                            
+      152 +                      padding: "18px 22px",                   
+      153 +                      cursor: "pointer",                      
+      154 +                      borderBottom: "1px solid rgba(42,35,32,0
+          +.05)",                                                        
+      155 +                      color: "var(--foreground)",             
+      156 +                      transition: "background 0.15s ease",    
+      157 +                    }}                                        
+      158                    >
+      159                      <div
+      101 -                      className="flex h-[42px] w-[42px] flex-s
+          -hrink-0 items-center justify-center rounded-full text-base fon
+          -t-bold"                                                       
+      102 -                      style={{ background: avatar.bg, color: a
+          -vatar.color }}                                                
+      160 +                      style={{                                
+      161 +                        width: "42px",                        
+      162 +                        height: "42px",                       
+      163 +                        borderRadius: "50%",                  
+      164 +                        background: avatar.bg,                
+      165 +                        color: avatar.color,                  
+      166 +                        display: "flex",                      
+      167 +                        alignItems: "center",                 
+      168 +                        justifyContent: "center",             
+      169 +                        fontWeight: 700,                      
+      170 +                        fontSize: "16px",                     
+      171 +                        flexShrink: 0,                        
+      172 +                      }}                                      
+      173                      >
+      174                        {studentInitial(name)}
+      175                      </div>
+      106 -                    <div className="min-w-0 flex-1">          
+      107 -                      <div className="text-[16.5px] font-bold"
+          ->{name}</div>                                                 
+      108 -                      <div className="text-[13px] font-medium"
+          - style={{ color: "var(--muted)" }}>                           
+      109 -                        {QUESTIONS_PER_STUDENT} responses     
+      110 -                      </div>                                  
+      176 +                    <div style={{ flex: 1, minWidth: 0 }}>    
+      177 +                      <div style={{ fontSize: "16.5px", fontWe
+          +ight: 700 }}>{name}</div>                                     
+      178 +                      <div style={{ fontSize: "13px", color: "
+          +var(--muted)", fontWeight: 500 }}>{meta}</div>                
+      179                      </div>
+      112 -                    <div className="w-[130px]">               
+      180 +                    <div className="hidden sm:block" style={{ 
+          +width: "130px" }}>                                            
+      181                        <StatusPill marked={isMarked} />
+      182                      </div>
+      183                      <div
+      116 -                      className="w-[86px] text-right font-bold
+          -"                                                             
+      184                        style={{
+      118 -                        fontSize: isMarked ? "17px" : "16px", 
+      119 -                        color: isMarked ? "var(--accent)" : "#
+          -c9b59c",                                                      
+      185 +                        width: "86px",                        
+      186 +                        textAlign: "right",                   
+      187                          fontVariantNumeric: "tabular-nums",
+      188                        }}
+      189                      >
+      123 -                      {total ? `${total.awarded} / ${total.max
+          -}` : `– / –`}                                                 
+      190 +                      <span                                   
+      191 +                        style={{                              
+      192 +                          fontSize: isMarked ? "17px" : "16px"
+          +,                                                             
+      193 +                          fontWeight: isMarked ? 800 : 700,   
+      194 +                          color: isMarked ? "var(--accent)" : 
+          +"var(--dash)",                                                
+      195 +                        }}                                    
+      196 +                      >                                       
+      197 +                        {total ? `${total.awarded} / ${total.m
+          +ax}` : total === null ? "– / –" : "– / –"}                    
+      198 +                      </span>                                 
+      199                      </div>
+      125 -                    <div className="w-[22px] text-right text-x
+          -l" style={{ color: "#c9b59c" }}>                              
+      126 -                      ›                                       
+      127 -                    </div>                                    
+      200 +                    <div style={{ width: "22px", color: "var(-
+          +-dash)", fontSize: "20px", textAlign: "right" }}>›</div>      
+      201                    </Link>
+      202                  );
+      203                })}
+     ...
+      212  function StatTile({ value, label }: { value: number; label: st
+           ring }) {
+      213    return (
+      214      <div
+      142 -      className="flex-1 rounded-lg px-[18px] py-3.5"          
+      143 -      style={{ background: "var(--card)", border: "1px solid v
+          -ar(--border)" }}                                              
+      215 +      style={{                                                
+      216 +        flex: 1,                                              
+      217 +        background: "var(--card)",                            
+      218 +        border: "1px solid var(--border)",                    
+      219 +        borderRadius: "8px",                                  
+      220 +        padding: "14px 18px",                                 
+      221 +      }}                                                      
+      222      >
+      145 -      <div className="text-2xl font-extrabold">{value}</div>  
+      146 -      <div className="text-[13px] font-medium" style={{ color:
+          - "var(--muted)" }}>                                           
+      147 -        {label}                                               
+      148 -      </div>                                                  
+      223 +      <div style={{ fontSize: "24px", fontWeight: 800 }}>{valu
+          +e}</div>                                                      
+      224 +      <div style={{ fontSize: "13px", color: "var(--muted)", f
+          +ontWeight: 500 }}>{label}</div>                               
+      225      </div>
+      226    );
+      227  }
+     ...
+      230    if (marked) {
+      231      return (
+      232        <span
+      157 -        className="inline-flex items-center gap-1.5 rounded-md
+          - px-[11px] py-[5px] text-[12.5px] font-bold"                  
+      158 -        style={{ color: "#4e7048", background: "#e6efe2" }}   
+      233 +        style={{                                              
+      234 +          display: "inline-flex",                             
+      235 +          alignItems: "center",                               
+      236 +          gap: "6px",                                         
+      237 +          fontSize: "12.5px",                                 
+      238 +          fontWeight: 700,                                    
+      239 +          color: "#4E7048",                                   
+      240 +          background: "#E6EFE2",                              
+      241 +          padding: "5px 11px",                                
+      242 +          borderRadius: "6px",                                
+      243 +        }}                                                    
+      244        >
+      245          ✓ Marked
+      246        </span>
+     ...
+      248    }
+      249    return (
+      250      <span
+      166 -      className="inline-flex items-center gap-1.5 rounded-md p
+          -x-[11px] py-1 text-[12.5px] font-bold"                        
+      167 -      style={{ color: "var(--muted-strong)", border: "1px soli
+          -d rgba(42,35,32,0.14)" }}                                     
+      251 +      style={{                                                
+      252 +        display: "inline-flex",                               
+      253 +        alignItems: "center",                                 
+      254 +        gap: "6px",                                           
+      255 +        fontSize: "12.5px",                                   
+      256 +        fontWeight: 700,                                      
+      257 +        color: "var(--rubric-text)",                          
+      258 +        background: "transparent",                            
+      259 +        border: "1px solid rgba(42,35,32,0.14)",              
+      260 +        padding: "4px 11px",                                  
+      261 +        borderRadius: "6px",                                  
+      262 +      }}                                                      
+      263      >
+      264        Not marked
+      265      </span>
+     ...
+      269  function LoadingCard({ message }: { message: string }) {
+      270    return (
+      271      <div
+      177 -      className="rounded-[10px] px-[22px] py-8 text-center tex
+          -t-[15px] font-medium"                                         
+      178 -      style={{ background: "var(--card)", border: "1px solid v
+          -ar(--border)", color: "var(--muted)" }}                       
+      272 +      style={{                                                
+      273 +        background: "var(--card)",                            
+      274 +        border: "1px solid var(--border)",                    
+      275 +        borderRadius: "10px",                                 
+      276 +        padding: "32px 22px",                                 
+      277 +        textAlign: "center",                                  
+      278 +        fontSize: "15px",                                     
+      279 +        fontWeight: 500,                                      
+      280 +        color: "var(--muted)",                                
+      281 +      }}                                                      
+      282      >
+      283        {message}
+      284      </div>
+     ...
+      288  function ErrorCard({ message }: { message: string }) {
+      289    return (
+      290      <div
+      188 -      className="rounded-[10px] px-[22px] py-8 text-center tex
+          -t-[15px] font-semibold"                                       
+      189 -      style={{ background: "#fbecd1", border: "1px solid rgba(
+          -138,100,0,0.28)", color: "var(--warning-fg)" }}               
+      291 +      style={{                                                
+      292 +        background: "var(--warning-bg)",                      
+      293 +        border: `1px solid ${"var(--warning-border)"}`,       
+      294 +        borderRadius: "10px",                                 
+      295 +        padding: "32px 22px",                                 
+      296 +        textAlign: "center",                                  
+      297 +        fontSize: "15px",                                     
+      298 +        fontWeight: 600,                                      
+      299 +        color: "var(--warning-fg)",                           
+      300 +      }}                                                      
+      301      >
+      302        {message}
+      303      </div>
+
+⏺ Update(marking-tool/app/page.tsx)
+  ⎿  Added 3 lines, removed 1 line
+      53  
+      54    return (
+      55      <main
+      56 +      className="px-4 sm:px-6"                                 
+      57        style={{
+      58          minHeight: "100vh",
+      59          width: "100%",
+      60          background: "var(--background)",
+      60 -        padding: "40px 16px 64px",                             
+      61 +        paddingTop: "40px",                                    
+      62 +        paddingBottom: "64px",                                 
+      63        }}
+      64      >
+      65        <div style={{ maxWidth: "820px", margin: "0 auto" }}>
+
+⏺ Update(marking-tool/app/page.tsx)
+  ⎿  Added 1 line, removed 1 line
+      196                            color: isMarked ? "var(--accent)" : 
+           "var(--dash)",
+      197                          }}
+      198                        >
+      199 -                        {total ? `${total.awarded} / ${total.m
+          -ax}` : total === null ? "– / –" : "– / –"}                    
+      199 +                        {total ? `${total.awarded} / ${total.m
+          +ax}` : "– / –"}                                               
+      200                        </span>
+      201                      </div>
+      202                      <div style={{ width: "22px", color: "var(-
+           -dash)", fontSize: "20px", textAlign: "right" }}>›</div>
+
+⏺ Update(marking-tool/app/page.tsx)
+  ⎿  Added 1 line, removed 1 line
+      196                            color: isMarked ? "var(--accent)" : 
+           "var(--dash)",
+      197                          }}
+      198                        >
+      199 -                        {total ? `${total.awarded} / ${total.m
+          -ax}` : "– / –"}                                               
+      199 +                        {total ? (isMarked ? `${total.awarded}
+          + / ${total.max}` : `– / ${total.max}`) : "– / –"}             
+      200                        </span>
+      201                      </div>
+      202                      <div style={{ width: "22px", color: "var(-
+           -dash)", fontSize: "20px", textAlign: "right" }}>›</div>
+
+  Read 1 file (ctrl+o to expand)
+
+⏺ Write(marking-tool/app/student/[name]/page.tsx)
+  ⎿  Added 256 lines, removed 102 lines
+      52    }, [name, alreadyInitialised, dispatch]);
+      53  
+      54    if (notFound) {
+      55 -    return (                                                   
+      56 -      <EmptyScreen message="Student not found." />             
+      57 -    );                                                         
+      55 +    return <EmptyScreen message="Student not found." />;       
+      56    }
+      57  
+      58    if (loadError) {
+      61 -    return (                                                   
+      62 -      <EmptyScreen message="Could not load this student. Try re
+         -freshing." />                                                  
+      63 -    );                                                         
+      59 +    return <EmptyScreen message="Could not load this student. T
+         +ry refreshing." />;                                            
+      60    }
+      61  
+      62    const questionResults = results[name];
+     ...
+       81    const avatar = studentAvatarColors(name);
+       82  
+       83    return (
+       88 -    <main className="flex flex-1 justify-center px-6 pt-10">  
+       89 -      <div className="w-full max-w-[820px] pb-24">            
+       84 +    <main                                                     
+       85 +      className="px-4 sm:px-6"                                
+       86 +      style={{ minHeight: "100vh", width: "100%", background: 
+          +"var(--background)", paddingTop: "40px" }}                    
+       87 +    >                                                         
+       88 +      <div style={{ maxWidth: "820px", margin: "0 auto", paddi
+          +ngBottom: "96px" }}>                                          
+       89          <Link
+       90            href="/"
+       92 -          className="mb-4 inline-flex items-center gap-1.5 tex
+          -t-sm font-semibold no-underline"                              
+       93 -          style={{ color: "var(--muted)" }}                   
+       91 +          className="hover:text-[var(--foreground)]"          
+       92 +          style={{                                            
+       93 +            display: "inline-flex",                           
+       94 +            alignItems: "center",                             
+       95 +            gap: "7px",                                       
+       96 +            color: "var(--muted)",                            
+       97 +            fontSize: "14px",                                 
+       98 +            fontWeight: 600,                                  
+       99 +            padding: "6px 0",                                 
+      100 +            marginBottom: "16px",                             
+      101 +          }}                                                  
+      102          >
+      103            ← All submissions
+      104          </Link>
+     ...
+      107  
+      108          {questionResults && (
+      109            <>
+      102 -            <div className="mb-6 flex items-start gap-4">     
+      110 +            <div style={{ display: "flex", alignItems: "flex-s
+          +tart", gap: "16px", marginBottom: "26px" }}>                  
+      111                <div
+      104 -                className="flex h-[54px] w-[54px] flex-shrink-
+          -0 items-center justify-center rounded-full text-xl font-bold" 
+      105 -                style={{ background: avatar.bg, color: avatar.
+          -color }}                                                      
+      112 +                style={{                                      
+      113 +                  width: "54px",                              
+      114 +                  height: "54px",                             
+      115 +                  borderRadius: "50%",                        
+      116 +                  background: avatar.bg,                      
+      117 +                  color: avatar.color,                        
+      118 +                  display: "flex",                            
+      119 +                  alignItems: "center",                       
+      120 +                  justifyContent: "center",                   
+      121 +                  fontWeight: 700,                            
+      122 +                  fontSize: "20px",                           
+      123 +                  flexShrink: 0,                              
+      124 +                }}                                            
+      125                >
+      126                  {studentInitial(name)}
+      127                </div>
+      109 -              <div className="flex-1">                        
+      110 -                <h1 className="m-0 mb-1 text-[27px] font-extra
+          -bold" style={{ letterSpacing: "-0.015em" }}>                  
+      128 +              <div style={{ flex: 1 }}>                       
+      129 +                <h1 style={{ fontSize: "27px", fontWeight: 800
+          +, letterSpacing: "-0.015em", margin: "0 0 4px" }}>            
+      130                    {name}
+      131                  </h1>
+      113 -                <div className="text-sm font-medium" style={{ 
+          -color: "var(--muted)" }}>                                     
+      132 +                <div style={{ fontSize: "14px", color: "var(--
+          +muted)", fontWeight: 500 }}>                                  
+      133                    Year 12 Mathematics · Response Marking
+      134                  </div>
+      135                </div>
+      117 -              <div className="text-right">                    
+      136 +              <div style={{ textAlign: "right" }}>            
+      137                  <div
+      119 -                  className="mb-[3px] text-[11px] font-bold up
+          -percase"                                                      
+      120 -                  style={{ color: "var(--muted-strong)", lette
+          -rSpacing: "0.1em" }}                                          
+      138 +                  style={{                                    
+      139 +                    fontSize: "11px",                         
+      140 +                    fontWeight: 700,                          
+      141 +                    letterSpacing: "0.1em",                   
+      142 +                    color: "var(--muted-strong)",             
+      143 +                    textTransform: "uppercase",               
+      144 +                    marginBottom: "3px",                      
+      145 +                  }}                                          
+      146                  >
+      147                    Total
+      148                  </div>
+      149                  <div
+      125 -                  className="text-[30px] font-extrabold"      
+      150                    style={{
+      151 +                    fontSize: "30px",                         
+      152 +                    fontWeight: 800,                          
+      153                      letterSpacing: "-0.02em",
+      154                      fontVariantNumeric: "tabular-nums",
+      129 -                    color: total && alreadyMarked ? "var(--acc
+          -ent)" : "#c9b59c",                                            
+      155 +                    color: alreadyMarked ? "var(--accent)" : "
+          +var(--dash)",                                                 
+      156                    }}
+      157                  >
+      158                    {total ? `${total.awarded} / ${total.max}` :
+            "– / –"}
+     ...
+      160                </div>
+      161              </div>
+      162  
+      137 -            <ul className="m-0 flex list-none flex-col gap-0 p
+          --0">                                                          
+      163 +            <ul style={{ margin: 0, padding: 0, listStyle: "no
+          +ne" }}>                                                       
+      164                {Object.values(questionResults).map((question) =
+           > {
+      165                  const isNoSubmission = question.status === "no
+           _submission";
+      166                  const hasMark = question.mark !== null;
+      141 -                const markDisplay = isNoSubmission ? "0" : has
+          -Mark ? question.mark : "–";                                   
+      167  
+      168                  return (
+      169                    <li
+      170                      key={question.questionId}
+      146 -                    className="mb-3.5 rounded-[10px] p-[22px]"
+      171                      style={{
+      148 -                      background: isNoSubmission ? "#f6eee0" :
+          - "var(--card)",                                               
+      172 +                      background: isNoSubmission ? "#F6EEE0" :
+          + "var(--card)",                                               
+      173                        border: question.needsReview
+      150 -                        ? "1px solid rgba(138,100,0,0.28)"    
+      174 +                        ? `1px solid ${"var(--warning-border)"
+          +}`                                                            
+      175                          : "1px solid var(--border)",
+      176 +                      borderRadius: "10px",                   
+      177 +                      padding: "22px",                        
+      178 +                      marginBottom: "14px",                   
+      179                        boxShadow: "0 1px 2px rgba(78,52,30,0.04
+           ), 0 6px 18px rgba(78,52,30,0.045)",
+      180                        opacity: isNoSubmission ? 0.72 : 1,
+      181 +                      transition: "opacity 0.3s ease",        
+      182                      }}
+      183                    >
+      156 -                    <div className="flex items-start gap-4">  
+      157 -                      <div className="min-w-0 flex-1">        
+      158 -                        <div className="mb-2 flex flex-wrap it
+          -ems-center gap-2.5">                                          
+      184 +                    <div style={{ display: "flex", gap: "16px"
+          +, alignItems: "flex-start" }}>                                
+      185 +                      <div style={{ flex: 1, minWidth: 0 }}>  
+      186 +                        <div                                  
+      187 +                          style={{                            
+      188 +                            display: "flex",                  
+      189 +                            alignItems: "center",             
+      190 +                            gap: "10px",                      
+      191 +                            marginBottom: "8px",              
+      192 +                            flexWrap: "wrap",                 
+      193 +                          }}                                  
+      194 +                        >                                     
+      195                            <span
+      160 -                            className="rounded px-[9px] py-[3p
+          -x] text-xs font-extrabold"                                    
+      161 -                            style={{ color: "var(--accent)", b
+          -ackground: "#fce4e3", letterSpacing: "0.06em" }}              
+      196 +                            style={{                          
+      197 +                              fontSize: "12px",               
+      198 +                              fontWeight: 800,                
+      199 +                              letterSpacing: "0.06em",        
+      200 +                              color: "var(--accent)",         
+      201 +                              background: "#FCE4E3",          
+      202 +                              padding: "3px 9px",             
+      203 +                              borderRadius: "4px",            
+      204 +                            }}                                
+      205                            >
+      206                              {question.questionId}
+      207                            </span>
+      208                            {question.needsReview && (
+      209                              <span
+      167 -                              className="rounded px-2.5 py-[3p
+          -x] text-xs font-bold"                                         
+      168 -                              style={{ color: "var(--warning-f
+          -g)", background: "var(--warning-bg)" }}                       
+      210 +                              style={{                        
+      211 +                                fontSize: "12px",             
+      212 +                                fontWeight: 700,              
+      213 +                                color: "var(--warning-fg)",   
+      214 +                                background: "var(--warning-bg)
+          +",                                                            
+      215 +                                padding: "3px 10px",          
+      216 +                                borderRadius: "4px",          
+      217 +                              }}                              
+      218                              >
+      219                                ⚠ Needs review
+      220                              </span>
+      221                            )}
+      222                            {isNoSubmission && (
+      223                              <span
+      175 -                              className="rounded px-2.5 py-[3p
+          -x] text-xs font-bold"                                         
+      176 -                              style={{ color: "var(--muted)", 
+          -background: "#ece4d8" }}                                      
+      224 +                              style={{                        
+      225 +                                fontSize: "12px",             
+      226 +                                fontWeight: 700,              
+      227 +                                color: "var(--muted)",        
+      228 +                                background: "#ECE4D8",        
+      229 +                                padding: "3px 10px",          
+      230 +                                borderRadius: "4px",          
+      231 +                              }}                              
+      232                              >
+      233                                No submission
+      234                              </span>
+      235                            )}
+      236                          </div>
+      237                          <div
+      183 -                          className="text-[16.5px] font-bold" 
+      184 -                          style={{ lineHeight: 1.4, color: isN
+          -oSubmission ? "#8e8172" : "var(--foreground)" }}              
+      238 +                          style={{                            
+      239 +                            fontSize: "16.5px",               
+      240 +                            fontWeight: 700,                  
+      241 +                            lineHeight: 1.4,                  
+      242 +                            color: isNoSubmission ? "#8E8172" 
+          +: "var(--foreground)",                                        
+      243 +                          }}                                  
+      244                          >
+      245                            {question.question}
+      246                          </div>
+      247                        </div>
+      189 -                      <div                                    
+      190 -                        className="flex flex-shrink-0 flex-col
+          - items-center justify-center gap-px rounded-lg px-1.5 py-2.5" 
+      191 -                        style={{                              
+      192 -                          minWidth: "74px",                   
+      193 -                          background: isNoSubmission ? "#efe7d
+          -9" : "#fffaf3",                                               
+      194 -                          border: "1px solid rgba(42,35,32,0.0
+          -7)",                                                          
+      195 -                        }}                                    
+      196 -                      >                                       
+      197 -                        <span                                 
+      198 -                          className="text-[23px] font-extrabol
+          -d"                                                            
+      199 -                          style={{                            
+      200 -                            fontVariantNumeric: "tabular-nums"
+          -,                                                             
+      201 -                            color: isNoSubmission ? "#bcae9c" 
+          -: hasMark ? "var(--accent)" : "#c9b59c",                      
+      202 -                          }}                                  
+      203 -                        >                                     
+      204 -                          {markDisplay}                       
+      205 -                        </span>                               
+      206 -                        <span className="text-sm font-semibold
+          -" style={{ color: "#bcae9c" }}>                               
+      207 -                          / {question.maxMarks}               
+      208 -                        </span>                               
+      209 -                      </div>                                  
+      248 +                                                              
+      249 +                      <MarkBox                                
+      250 +                        noSub={isNoSubmission}                
+      251 +                        hasMark={hasMark}                     
+      252 +                        mark={question.mark}                  
+      253 +                        maxMarks={question.maxMarks}          
+      254 +                      />                                      
+      255                      </div>
+      256  
+      212 -                    <div className="mt-3.5">                  
+      213 -                      <div                                    
+      214 -                        className="mb-1 text-[11px] font-bold 
+          -uppercase"                                                    
+      215 -                        style={{ color: "var(--muted-strong)",
+          - letterSpacing: "0.08em" }}                                   
+      216 -                      >                                       
+      217 -                        Rubric                                
+      218 -                      </div>                                  
+      219 -                      <div className="text-[13.5px]" style={{ 
+          -lineHeight: 1.5, color: "#a3917d" }}>                         
+      257 +                    <div style={{ marginTop: "14px" }}>       
+      258 +                      <SectionLabel>Rubric</SectionLabel>     
+      259 +                      <div style={{ fontSize: "13.5px", lineHe
+          +ight: 1.5, color: "var(--rubric-text)" }}>                    
+      260                          {question.rubric}
+      261                        </div>
+      262                      </div>
+      263  
+      224 -                    <div className="mt-3.5">                  
+      264 +                    <div style={{ marginTop: "14px" }}>       
+      265 +                      <SectionLabel>Response</SectionLabel>   
+      266                        <div
+      226 -                        className="mb-1.5 text-[11px] font-bol
+          -d uppercase"                                                  
+      227 -                        style={{ color: "var(--muted-strong)",
+          - letterSpacing: "0.08em" }}                                   
+      228 -                      >                                       
+      229 -                        Response                              
+      230 -                      </div>                                  
+      231 -                      <div                                    
+      232 -                        className="rounded-lg px-4 py-[13px] t
+          -ext-[15px] whitespace-pre-wrap"                               
+      267                          style={{
+      268 +                          fontSize: "15px",                   
+      269                            lineHeight: 1.55,
+      235 -                          color: isNoSubmission ? "#b4a590" : 
+          -"#3a322c",                                                    
+      236 -                          background: isNoSubmission ? "transp
+          -arent" : "#fffaf3",                                           
+      270 +                          color: isNoSubmission ? "#B4A590" : 
+          +"var(--response-text)",                                       
+      271 +                          background: isNoSubmission ? "transp
+          +arent" : "#FFFAF3",                                           
+      272                            border: "1px solid rgba(42,35,32,0.0
+           6)",
+      273 +                          borderRadius: "8px",                
+      274 +                          padding: "13px 16px",               
+      275                            fontStyle: isNoSubmission ? "italic"
+            : "normal",
+      276 +                          whiteSpace: "pre-wrap",             
+      277                          }}
+      278                        >
+      279                          {isNoSubmission ? "No response was sub
+           mitted for this question." : question.response}
+     ...
+      281                      </div>
+      282  
+      283                      {question.feedback && (
+      246 -                      <div className="mt-3.5">                
+      284 +                      <div style={{ marginTop: "14px" }}>     
+      285 +                        <SectionLabel>Feedback</SectionLabel> 
+      286                          <div
+      248 -                          className="mb-1.5 text-[11px] font-b
+          -old uppercase"                                                
+      249 -                          style={{ color: "var(--muted-strong)
+          -", letterSpacing: "0.08em" }}                                 
+      287 +                          style={{                            
+      288 +                            fontSize: "14.5px",               
+      289 +                            lineHeight: 1.55,                 
+      290 +                            color: "var(--response-text)",    
+      291 +                            background: "#FFF7EA",            
+      292 +                            border: "1px solid rgba(42,35,32,0
+          +.06)",                                                        
+      293 +                            borderRadius: "8px",              
+      294 +                            padding: "13px 16px",             
+      295 +                          }}                                  
+      296                          >
+      251 -                          Feedback                            
+      252 -                        </div>                                
+      253 -                        <div className="text-[13.5px]" style={
+          -{ lineHeight: 1.5, color: "#a3917d" }}>                       
+      297                            {question.feedback}
+      298                          </div>
+      299                        </div>
+     ...
+      304              </ul>
+      305  
+      306              <div
+      264 -              className="fixed inset-x-0 bottom-0 px-6 py-3.5"
+      307 +              className="fixed inset-x-0 bottom-0 px-4 sm:px-6
+          +"                                                             
+      308                style={{
+      309                  background: "rgba(255,250,243,0.92)",
+      310                  backdropFilter: "blur(8px)",
+      311                  borderTop: "1px solid rgba(42,35,32,0.07)",
+      312 +                padding: "14px 24px",                         
+      313                }}
+      314              >
+      271 -              <div className="mx-auto max-w-[820px]">         
+      315 +              <div style={{ maxWidth: "820px", margin: "0 auto
+          +" }}>                                                         
+      316                  {isGradingThisStudent && gradingProgress ? (
+      317                    <div>
+      274 -                    <div className="mb-[9px] flex items-center
+          - justify-between">                                            
+      275 -                      <span className="text-[14.5px] font-bold
+          -">                                                            
+      318 +                    <div                                      
+      319 +                      style={{                                
+      320 +                        display: "flex",                      
+      321 +                        justifyContent: "space-between",      
+      322 +                        alignItems: "center",                 
+      323 +                        marginBottom: "9px",                  
+      324 +                      }}                                      
+      325 +                    >                                         
+      326 +                      <span style={{ fontSize: "14.5px", fontW
+          +eight: 700 }}>                                                
+      327                          Grading {Math.min(gradingProgress.done
+            + 1, gradingProgress.total)} of{" "}
+      328                          {gradingProgress.total}…
+      329                        </span>
+      279 -                      <span className="text-[13px] font-semibo
+          -ld" style={{ color: "var(--muted)" }}>                        
+      330 +                      <span style={{ fontSize: "13px", fontWei
+          +ght: 600, color: "var(--muted)" }}>                           
+      331                          {Math.round((gradingProgress.done / gr
+           adingProgress.total) * 100)}%
+      332                        </span>
+      333                      </div>
+      283 -                    <div className="h-[9px] overflow-hidden ro
+          -unded" style={{ background: "#e4e1db" }}>                     
+      334 +                    <div style={{ height: "9px", background: "
+          +#E4E1DB", borderRadius: "4px", overflow: "hidden" }}>         
+      335                        <div
+      285 -                        className="h-full rounded transition-a
+          -ll duration-300"                                              
+      336                          style={{
+      337 +                          height: "100%",                     
+      338                            width: `${(gradingProgress.done / gr
+           adingProgress.total) * 100}%`,
+      339                            background: "var(--accent)",
+      340 +                          borderRadius: "4px",                
+      341                            backgroundImage:
+      342                              "linear-gradient(45deg, rgba(255,2
+           55,255,0.18) 25%, transparent 25%, transparent 50%, rgba(255,2
+           55,255,0.18) 50%, rgba(255,255,255,0.18) 75%, transparent 75%)
+           ",
+      343                            backgroundSize: "28px 28px",
+      344                            animation: "bar-stripe 0.7s linear i
+           nfinite",
+      345 +                          transition: "width 0.4s ease",      
+      346                          }}
+      347                        />
+      348                      </div>
+      349                    </div>
+      350                  ) : (
+      298 -                  <div className="flex items-center justify-en
+          -d gap-3">                                                     
+      351 +                  <div style={{ display: "flex", gap: "12px", 
+          +justifyContent: "flex-end", alignItems: "center" }}>          
+      352                      <Link
+      353                        href="/"
+      301 -                      className="rounded-lg px-[22px] py-3 tex
+          -t-[15px] font-bold no-underline"                              
+      354 +                      className="hover:bg-[var(--hover-bg)]"  
+      355                        style={{
+      356                          background: "var(--card)",
+      357                          border: "1px solid rgba(42,35,32,0.12)
+           ",
+      358                          color: "var(--foreground)",
+      359 +                        fontSize: "15px",                     
+      360 +                        fontWeight: 700,                      
+      361 +                        padding: "12px 22px",                 
+      362 +                        borderRadius: "8px",                  
+      363 +                        transition: "background 0.15s ease",  
+      364                        }}
+      365                      >
+      366                        Return
+     ...
+      368                      <button
+      369                        type="button"
+      370                        onClick={handleGradeWithAi}
+      313 -                      className="cursor-pointer rounded-lg bor
+          -der-none px-6 py-3 text-[15px] font-bold text-white"          
+      314 -                      style={{ background: "var(--accent)", bo
+          -xShadow: "0 4px 14px rgba(209,26,51,0.3)" }}                  
+      371 +                      className="cursor-pointer border-none ho
+          +ver:bg-[var(--accent-hover)] active:translate-y-px"           
+      372 +                      style={{                                
+      373 +                        background: "var(--accent)",          
+      374 +                        color: "#fff",                        
+      375 +                        fontSize: "15px",                     
+      376 +                        fontWeight: 700,                      
+      377 +                        padding: "12px 24px",                 
+      378 +                        borderRadius: "8px",                  
+      379 +                        boxShadow: "0 4px 14px rgba(209,26,51,
+          +0.3)",                                                        
+      380 +                        transition: "background 0.15s ease, tr
+          +ansform 0.1s ease",                                           
+      381 +                      }}                                      
+      382                      >
+      383                        {alreadyMarked ? "Re-grade with AI" : "G
+           rade with AI"}
+      384                      </button>
+     ...
+      393    );
+      394  }
+      395  
+      396 +// The mark box: a dash before grading, the real mark once it 
+          +lands. Keyed                                                  
+      397 +// by whether a mark is showing so React mounts a fresh node t
+          +he moment a                                                   
+      398 +// mark first appears, which is what makes the `mark-in` CSS a
+          +nimation                                                      
+      399 +// (translateY + fade, defined in globals.css) actually play i
+          +nstead of                                                     
+      400 +// silently updating an existing node's text.                 
+      401 +function MarkBox({                                            
+      402 +  noSub,                                                      
+      403 +  hasMark,                                                    
+      404 +  mark,                                                       
+      405 +  maxMarks,                                                   
+      406 +}: {                                                          
+      407 +  noSub: boolean;                                             
+      408 +  hasMark: boolean;                                           
+      409 +  mark: number | null;                                        
+      410 +  maxMarks: number;                                           
+      411 +}) {                                                          
+      412 +  const showMark = noSub || hasMark;                          
+      413 +  const markText = noSub ? "0" : hasMark ? String(mark) : "–";
+      414 +  const markColor = noSub ? "var(--dash)" : hasMark ? "var(--a
+          +ccent)" : "var(--dash)";                                      
+      415 +                                                              
+      416 +  return (                                                    
+      417 +    <div                                                      
+      418 +      key={showMark ? "mark" : "dash"}                        
+      419 +      style={{                                                
+      420 +        display: "flex",                                      
+      421 +        flexDirection: "column",                              
+      422 +        alignItems: "center",                                 
+      423 +        justifyContent: "center",                             
+      424 +        gap: "1px",                                           
+      425 +        minWidth: "74px",                                     
+      426 +        padding: "10px 6px",                                  
+      427 +        background: noSub ? "#EFE7D9" : "#FFFAF3",            
+      428 +        border: "1px solid rgba(42,35,32,0.07)",              
+      429 +        borderRadius: "8px",                                  
+      430 +        flexShrink: 0,                                        
+      431 +        animation: showMark && !noSub ? "mark-in 0.4s ease" : 
+          +undefined,                                                    
+      432 +      }}                                                      
+      433 +    >                                                         
+      434 +      <span style={{ fontSize: "23px", fontWeight: 800, color:
+          + markColor, fontVariantNumeric: "tabular-nums" }}>            
+      435 +        {markText}                                            
+      436 +      </span>                                                 
+      437 +      <span style={{ fontSize: "14px", fontWeight: 600, color:
+          + "var(--max-text)" }}>/ {maxMarks}</span>                     
+      438 +    </div>                                                    
+      439 +  );                                                          
+      440 +}                                                             
+      441 +                                                              
+      442 +function SectionLabel({ children }: { children: string }) {   
+      443 +  return (                                                    
+      444 +    <div                                                      
+      445 +      style={{                                                
+      446 +        fontSize: "11px",                                     
+      447 +        fontWeight: 700,                                      
+      448 +        letterSpacing: "0.08em",                              
+      449 +        color: "var(--muted-strong)",                         
+      450 +        textTransform: "uppercase",                           
+      451 +        marginBottom: "6px",                                  
+      452 +      }}                                                      
+      453 +    >                                                         
+      454 +      {children}                                              
+      455 +    </div>                                                    
+      456 +  );                                                          
+      457 +}                                                             
+      458 +                                                              
+      459  function LoadingCard({ message }: { message: string }) {
+      460    return (
+      461      <div
+      332 -      className="rounded-[10px] px-[22px] py-8 text-center tex
+          -t-[15px] font-medium"                                         
+      333 -      style={{ background: "var(--card)", border: "1px solid v
+          -ar(--border)", color: "var(--muted)" }}                       
+      462 +      style={{                                                
+      463 +        background: "var(--card)",                            
+      464 +        border: "1px solid var(--border)",                    
+      465 +        borderRadius: "10px",                                 
+      466 +        padding: "32px 22px",                                 
+      467 +        textAlign: "center",                                  
+      468 +        fontSize: "15px",                                     
+      469 +        fontWeight: 500,                                      
+      470 +        color: "var(--muted)",                                
+      471 +      }}                                                      
+      472      >
+      473        {message}
+      474      </div>
+     ...
+      477  
+      478  function EmptyScreen({ message }: { message: string }) {
+      479    return (
+      342 -    <main className="flex flex-1 justify-center px-6 pt-10">  
+      343 -      <div className="w-full max-w-[820px]">                  
+      480 +    <main                                                     
+      481 +      className="px-4 sm:px-6"                                
+      482 +      style={{ minHeight: "100vh", width: "100%", background: 
+          +"var(--background)", paddingTop: "40px" }}                    
+      483 +    >                                                         
+      484 +      <div style={{ maxWidth: "820px", margin: "0 auto" }}>   
+      485          <div
+      345 -          className="rounded-[10px] px-[22px] py-10 text-cente
+          -r"                                                            
+      346 -          style={{ background: "var(--card)", border: "1px sol
+          -id var(--border)" }}                                          
+      486 +          style={{                                            
+      487 +            background: "var(--card)",                        
+      488 +            border: "1px solid var(--border)",                
+      489 +            borderRadius: "10px",                             
+      490 +            padding: "40px 22px",                             
+      491 +            textAlign: "center",                              
+      492 +          }}                                                  
+      493          >
+      348 -          <p className="m-0 mb-4 text-[15px] font-semibold" st
+          -yle={{ color: "var(--foreground)" }}>                         
+      494 +          <p style={{ margin: "0 0 16px", fontSize: "15px", fo
+          +ntWeight: 600, color: "var(--foreground)" }}>                 
+      495              {message}
+      496            </p>
+      497            <Link
+      498              href="/"
+      353 -            className="inline-block rounded-lg px-5 py-2.5 tex
+          -t-sm font-bold text-white no-underline"                       
+      354 -            style={{ background: "var(--accent)" }}           
+      499 +            className="hover:bg-[var(--accent-hover)]"        
+      500 +            style={{                                          
+      501 +              display: "inline-block",                        
+      502 +              background: "var(--accent)",                    
+      503 +              color: "#fff",                                  
+      504 +              fontSize: "14px",                               
+      505 +              fontWeight: 700,                                
+      506 +              padding: "10px 20px",                           
+      507 +              borderRadius: "8px",                            
+      508 +            }}                                                
+      509            >
+      510              Return
+      511            </Link>
+
+⏺ Bash(npm run lint 2>&1 | tail -60)
+  ⎿  > marking-tool@0.1.0 lint
+     > eslint
+
+⏺ Bash(npx tsc --noEmit 2>&1 | tail -80)
+  ⎿  (No output)
+
+⏺ Both clean. Now tests and build.
+
+⏺ Bash(npm test -- --run 2>&1 | tail -30 && npm run build 2>&1 | tail -40)
+  ⎿   ✓ tests/marking-prompt.test.ts (6 tests) 2ms
+      ✓ tests/loadExam.test.ts (4 tests) 11ms
+      ✓ tests/grading-state.test.ts (3 tests) 2ms
+     … +61 lines (ctrl+o to expand)
+
+⏺ All 40 tests pass, build succeeds. Let me do a live render check for the
+  dark-background concern and the new Screen 1 behavior.
+
+⏺ Bash((npm run dev > /tmp/dev.log 2>&1 &) ; sleep 3
+      curl -s http://localhost:3000/ -o /dev/null -w "root: %{http_code}\n"…)
+  ⎿  root: 200
+     student: 200
+
+⏺ Bash(curl -s http://localhost:3000/ -o /tmp/root.html
+      grep -o "<link[^>]*\.css[^>]*>" /tmp/root.html…)
+  ⎿  <link rel="stylesheet" href="/_next/static/chunks/%5Broot-of-the-serve
+     r%5D__0cap_wju6jf68._.css" data-precedence="next_static/chunks/[root-o
+     f-the-server]__0cap_wju6jf68._.css"/>
+     … +2 lines (ctrl+o to expand)
+
+⏺ Bash(curl -s "http://localhost:3000/_next/static/chunks/%5Broot-of-the-server%
+      5D__0cap_wju6jf68._.css" -o /tmp/app.css
+      wc -l /tmp/app.css…)
+  ⎿      1193 /tmp/app.css
+     fffaf3
+
+  Searched for 1 pattern (ctrl+o to expand)
+
+⏺ Bash(sed -n '940,1000p' /tmp/app.css)
+  ⎿    @media (min-width: 40rem) {
+         .sm\:block {
+           display: block;
+     … +56 lines (ctrl+o to expand)
+⏺ Bash(ps aux | grep -i "next" | grep -v grep)
+  ⎿  noah.carnegie    19186   0.0  0.1 435859216   7168 s003  S+    6:35PM
+       0:00.49 node /Users/noah.carnegie/Documents/1910/marking-tool/.next/
+     dev/build/chunks/pool_entry-[turbopack-node]_transforms_webpack-loader
+     … +43 lines (ctrl+o to expand)
+
+⏺ Bash(curl -s http://localhost:3000/ -o /tmp/root2.html
+      CSS_URL=$(grep -o 'href="/_next/static/[^"]*\.css"' /tmp/root2.html | head
+      -1 | sed 's/href="//;s/"$//')…)
+  ⎿  css: /_next/static/chunks/%5Broot-of-the-server%5D__0cap_wju6jf68._.cs
+     s
+
+⏺ Bash(stat -f "%Sm %N" app/globals.css
+      date…)
+  ⎿  Oct 19 18:35:38 2026 app/globals.css
+     Mon Oct 19 18:43:21 AEDT 2026
+     … +24 lines (ctrl+o to expand)
+
+  Read 1 file (ctrl+o to expand)
+
+⏺ Bash(curl -s http://localhost:3000/ -o /tmp/root3.html
+      CSS_URL=$(grep -o 'href="/_next/static/[^"]*\.css"' /tmp/root3.html | head
+      -1 | sed 's/href="//;s/"$//')…)
+  ⎿  css: /_next/static/chunks/%5Broot-of-the-server%5D__0cap_wju6jf68._.cs
+     s
+
+⏺ Bash(grep -n ":root {" /tmp/app3.css
+      sed -n '/:root {/,/^}/p' /tmp/app3.css | head -20…)
+  ⎿  956::root {
+     :root {
+       --background: #fffaf3;
+     … +14 lines (ctrl+o to expand)
+
+⏺ Found it — and it's not a bug in the app. Here's what's happening:
+
+  The background is not dark in the code. I checked app/globals.css on disk:
+  --background: #fffaf3 (cream), color-scheme: light, both set correctly, and
+  npm run build/lint/typecheck/tests all pass clean with the new styling in
+  place.
+
+  What's actually dark is coming from your browser's Dark Reader extension. Your
+  running dev server's log (.next/dev/logs/next-development.log) shows a
+  hydration-mismatch warning with the smoking gun:
+
+  <html lang="en" ...
+    data-darkreader-white-flash-suppressor="active"
+    data-darkreader-mode="dynamic"
+    data-darkreader-scheme="dark">
+
+  Dark Reader is injecting its own forced-dark styling into the page
+  client-side, overriding our cream theme regardless of what the CSS says.
+  That's a per-site browser setting, not something fixable from app code — the
+  usual fix is to disable Dark Reader for localhost:3000 (its toolbar icon →
+  toggle off for this site, or add it to the extension's site-exclusion list).
+
+  Separately, I noticed something worth flagging: the CSS your running dev
+  server (PID 13878, started before my edits) is actually serving is stale —
+  it's missing several tokens I just added (color-scheme, --rubric-text, mark-in
+  keyframes, etc.), even though the file on disk is correct and several
+  Turbopack recompiles have happened since. I didn't touch your dev server since
+  it's your live session, but you may want to restart it (Ctrl+C then npm run
+  dev) to be sure you're seeing the latest styles once Dark Reader is off.
+
+⏺ User answered Claude's questions:
+  ⎿  · Your dev server (started earlier) is serving stale CSS even after my
+     edits and several recompiles. Want me to restart it so it picks up the
+     UI-02 changes? → Yes, restart it
+
+⏺ Bash(kill 13877 13878 2>/dev/null; sleep 1; ps aux | grep "next
+      dev\|next-server" | grep -v grep)
+  ⎿  No matches found
+
+⏺ Processes stopped cleanly. Starting a fresh dev server.
+
+⏺ Bash(rm -rf .next && (npm run dev > /tmp/dev.log 2>&1 &) ; sleep 4; tail -20
+      /tmp/dev.log)
+  ⎿  > marking-tool@0.1.0 dev
+     > next dev
+     … +15 lines (ctrl+o to expand)
+
+⏺ Bash(curl -s http://localhost:3000/ -o /tmp/rootF.html
+      CSS_URL=$(grep -o 'href="/_next/static/[^"]*\.css"' /tmp/rootF.html | head
+      -1 | sed 's/href="//;s/"$//')…)
+  ⎿  css: /_next/static/chunks/%5Broot-of-the-server%5D__0cap_wju6jf68._.cs
+     s
+     523:  color-scheme: light;
+     … +4 lines (ctrl+o to expand)
+
+⏺ Confirmed — the fresh server now serves the correct cream theme with
+  color-scheme: light and all the new tokens from UI-02-final-ui.md.
+
+⏺ Bash(npm run lint 2>&1 | tail -20 && npx tsc --noEmit 2>&1 | tail -20 && npm
+      test -- --run 2>&1 | tail -15)
+  ⎿  > marking-tool@0.1.0 lint
+     > eslint
+     … +16 lines (ctrl+o to expand)
+
+⏺ All green. Summary:
+
+  Done:
+  - Executed UI-02-final-ui.md against the two real screens (app/page.tsx,
+    app/student/[name]/page.tsx): exact tokens from §1 (colors, type, shadows,
+    radii), fixed per-student avatar colors (lib/ui/studentAvatar.ts), the "X of
+    8 answered" / max-total meta line (fetches all students' full submissions
+    on Screen 1 so this is known before opening anyone), the mark-in reveal
+    animation (key-swap technique so the CSS keyframe actually fires), the
+    required Feedback block (§5.3, boxed like the Response block, shown only
+    once graded), and exact hover colors via CSS vars + Tailwind arbitrary
+    classes.
+  - app/globals.css: added color-scheme: light and an explicit html { background
+    } to make the light theme unambiguous to the browser.
+
+  Root cause of "dark background": not a code issue — your Dark Reader browser
+  extension was force-darkening the page (confirmed via injected
+  data-darkreader-scheme="dark" in the dev server's hydration-mismatch log).
+  Disable it for localhost:3000 to see the real cream theme.
+
+  Also found and fixed: your running dev server (started before these edits) was
+  serving stale CSS despite several recompiles — a Turbopack cache issue, not a
+  code bug. With your OK, I stopped it, cleared .next, and started a fresh one;
+  it now serves the correct styles (verified via curl).
+
+  Verified: lint clean, typecheck clean, 40/40 tests pass, production build
+  succeeds.
+
+  Still outstanding (per CLAUDE.md §3): no browser tool this session, so I
+  couldn't visually click through myself — please do one manual pass once Dark
+  Reader is off. This also still needs the blind-review step before being marked
+  done.

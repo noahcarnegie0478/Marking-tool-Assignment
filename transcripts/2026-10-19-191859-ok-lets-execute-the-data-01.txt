@@ -1,0 +1,564 @@
+
+❯ <ide_opened_file>The user opened the file
+  /Users/noah.carnegie/Documents/1910/marking-tool/tickets.md in the IDE. This
+  may or may not be related to the current task.</ide_opened_file>
+
+❯ ok, let's execute the data-01
+
+  Read 1 file (ctrl+o to expand)
+  ⎿  Loaded marking-tool/CLAUDE.md
+
+⏺ Bash(cd /Users/noah.carnegie/Documents/1910/marking-tool && ls -la && echo
+      "---journal---" && cat docs/journal.md 2>/dev/null && echo "---spec
+      exists?---" && ls docs…)
+  ⎿  Error: Exit code 1
+     total 664
+     drwxr-xr-x@  23 noah.carnegie  staff     736 Oct 19 16:42 .
+     drwxr-xr-x    5 noah.carnegie  staff     160 Oct 19 14:41 ..
+     -rw-r--r--@   1 noah.carnegie  staff     156 Oct 19 15:37 .env
+     drwxr-xr-x@  14 noah.carnegie  staff     448 Oct 19 16:38 .git
+     -rw-r--r--@   1 noah.carnegie  staff     480 Oct 19 14:40 .gitignore
+     drwxr-xr-x@   4 noah.carnegie  staff     128 Oct 19 14:41 .next
+     -rw-r--r--@   1 noah.carnegie  staff     679 Oct 19 14:41 AGENTS.md
+     -rw-r--r--@   1 noah.carnegie  staff   14438 Oct 19 16:28 CLAUDE.md
+     … +16 lines (ctrl+o to expand)
+
+  Read 1 file (ctrl+o to expand)
+
+⏺ Bash(cd /Users/noah.carnegie/Documents/1910/marking-tool && find app lib data
+      -type f 2>/dev/null && echo "---data---" && ls data/ && echo
+      "---package---" && cat pac…)
+  ⎿  Error: Exit code 1
+     app/favicon.ico
+     app/layout.tsx
+     app/page.tsx
+     app/globals.css
+     data/exam_data.json
+
+  Read 1 file (ctrl+o to expand)
+
+⏺ Bash(cd /Users/noah.carnegie/Documents/1910/marking-tool && grep -n "^#"
+      technical-spec.md)
+  ⎿  1:# AI-Assisted Maths Marking Tool: Technical Spec
+     10:## 0. Readiness gate
+     22:## 1. Product frame
+     … +32 lines (ctrl+o to expand)
+
+  Read 1 file (ctrl+o to expand)
+
+⏺ Now I have enough context. Let me enter plan mode as the workflow requires
+  (plan → wait for approval → execute).
+
+⏺ Entered plan mode
+  Claude is now exploring and designing an implementation approach.
+
+  Read 1 file (ctrl+o to expand)
+
+⏺ This is a small, well-scoped ticket (DATA-01, est. 0.5h) with clear acceptance
+  criteria from the ticket/spec I already read. No architectural ambiguity
+  remains, so I'll skip spawning Explore/Plan subagents and write the plan
+  directly.
+
+⏺ Updated plan
+  ⎿  /plan to preview
+
+⏺ User approved Claude's plan
+  ⎿  Plan saved to: ~/.claude/plans/toasty-knitting-balloon.md · /plan to edit
+     DATA-01 · Exam data loader and read APIs
+
+     Context
+
+     Both UI screens (Screen 1: list of 4 students, Screen 2: one student's 8
+     questions) need real data to render. Right now the app has no lib/ folder
+     and no API routes — just the default Next.js scaffold. This ticket builds
+     the loader that reads data/exam_data.json and the two read-only API routes
+     the frontend will call. No grading, no marks, no AI (that's later tickets).
+     This also lays down invariant I4: the "no submission" marker must be set
+     here, before any grading exists, so a skipped question can never
+     accidentally reach the AI later.
+
+     Files to add
+
+     - lib/exam/loadExam.ts — pure-ish loader/builder functions (no I/O beyond
+       reading the already-imported JSON)
+     - app/api/submissions/route.ts — GET: list of 4 students
+     - app/api/submissions/[name]/route.ts — GET: one student's full 8-question
+       grid, or 404
+     - lib/validation/schemas.ts — zod schemas for the exam JSON shape
+       (validated once at load, per CLAUDE.md §4.2 rule 3: validate at every
+       boundary — the JSON file is a boundary too)
+     - tests/loadExam.test.ts — unit tests for the loader functions (thin per
+       ticket, but these are domain-ish pure functions so test them directly per
+       CLAUDE.md §7)
+     - tests/api-submissions.test.ts — thin tests hitting the two route handlers
+       directly
+
+     Design, matching technical-spec.md §7
+
+     data/exam_data.json has questions (8, fixed) and student_responses (sparse,
+     keyed by student+question_id). The loader must:
+     1. Load and zod-validate the raw JSON once (module-level, so route handlers
+        just import the already-validated data — avoids re-parsing per
+        request).
+     2. Derive the fixed list of 4 student names from the distinct student
+        values in student_responses (Aisha, Ben, Chen, Diego) — not hardcoded,
+        so the loader stays correct if the source data changes.
+     3. getSubmissionsList() → { name: string }[], one entry per student (used
+        by Screen 1 / the list API).
+     4. getStudentSubmission(name: string) → builds the full 8-question grid
+        from the question list, then attaches each student's response where it
+        exists. A question with no matching response (or an empty-string
+        response, per Aisha's blank Q7) gets status: "no_submission", response:
+        null. This is the exact "build from question list first" decision in
+        spec §7.3 — looping over responses alone would hide blanks/missing
+        entries. Returns null if the student name isn't found, so the route can
+        turn that into a 404.
+
+     Note: Aisha's Q7 response is "" (empty string present in the data) vs
+     Diego's Q2/Q6/etc which are simply absent from student_responses. Both must
+     be treated as "no submission" — the loader checks for missing-or-blank,
+     not just missing.
+
+     Shape returned by the detail API (per spec §7.1/§7.2 + ticket)
+
+     Each of the 8 questions becomes an object with: questionId, question,
+     rubric, modelAnswer, maxMarks, response (string or null), status
+     ("no_submission" | "pending" — only these two exist before grading starts;
+     grading/graded come in later tickets but the type should allow for them now
+     since GradingContext will reuse this shape).
+
+     API routes
+
+     - GET /api/submissions → 200 { students: [{ name }, ...] } (4 entries)
+     - GET /api/submissions/[name] → 200 { name, questions: [...8 items...] },
+       or 404 { error: "Student not found." } for an unknown name (per spec §15
+       error table)
+
+     Test plan (thin, per ticket's own table)
+
+     - Happy: list API returns exactly 4 students
+     - Happy: detail API for Diego → 8 questions, 6 no_submission, Q2 and Q6
+       present with their response text
+     - Happy: detail API for Aisha → Q7 is no_submission (covers the
+       blank-string case, not just missing)
+     - Failure: detail API for "Zzz" → 404 with a clear message, no crash
+
+     Verification
+
+     - npm test — paste real output for the new test files
+     - npx tsc --noEmit
+     - npm run lint
+     - npm run build
+     - Manually hit curl http://localhost:3000/api/submissions and
+       /api/submissions/Diego and /api/submissions/Zzz against npm run dev to
+       eyeball the real JSON shape
+
+  Searched for 1 pattern, read 1 file (ctrl+o to expand)
+
+⏺ Before writing DATA-01 code, I found a blocker: SETUP-01 (an earlier,
+  already-committed ticket) was supposed to set up Vitest, but package.json has
+  no vitest dependency and no test script. DATA-01's Definition of Done requires
+  passing tests with real output pasted, which I can't do without test tooling
+  in place.
+
+⏺ User answered Claude's questions:
+  ⎿  · SETUP-01 never actually installed Vitest or added a test script, but
+     DATA-01 needs working tests. How should I handle this? → Set up Vitest now,
+     as part of DATA-01
+
+⏺ Setting up Vitest minimally, then building the DATA-01 files.
+
+⏺ Bash(npm install -D vitest 2>&1 | tail -20)
+  ⎿  npm error
+     npm error Could not resolve dependency:
+     npm error peerOptional @types/node@"^22.0.0 || >=24.0.0" from vitest@5
+     … +21 lines (ctrl+o to expand)
+
+⏺ Bash(node -v && cat node_modules/@types/node/package.json | grep '"version"')
+  ⎿  v22.23.3
+         "version": "20.19.43",
+
+⏺ Bash(npm view vitest@2 version 2>&1 | tail -5 && npm install -D vitest@^2 2>&1
+      | tail -20)
+  ⎿  vitest@2.1.5 '2.1.5'
+     vitest@2.1.6 '2.1.6'
+     vitest@2.1.7 '2.1.7'
+     … +14 lines (ctrl+o to expand)
+
+⏺ Installed. Now adding the test script and vitest config.
+  Read 1 file (ctrl+o to expand)
+
+⏺ Update(marking-tool/package.json)
+  ⎿  Added 2 lines, removed 1 line
+       6      "dev": "next dev",
+       7      "build": "next build",
+       8      "start": "next start",
+       9 -    "lint": "eslint"                                           
+       9 +    "lint": "eslint",                                          
+      10 +    "test": "vitest run"                                       
+      11    },
+      12    "dependencies": {
+      13      "@anthropic-ai/sdk": "^0.135.0",
+
+⏺ No vitest.config.ts needed for a plain Node test run (no React/DOM tests yet),
+  vitest works with defaults. Now let's check the exam JSON data shape once
+  more and write the schema + loader.
+
+⏺ Write(marking-tool/lib/validation/schemas.ts)
+  ⎿  Wrote 30 lines to marking-tool/lib/validation/schemas.ts
+       1 import { z } from "zod";
+       2
+       3 // Shape of one question in exam_data.json. Fixed set of 8, read
+          from file.
+       4 export const QuestionSchema = z.object({
+       6   topic: z.string().min(1),
+       7   difficulty: z.string().min(1),
+       8   max_marks: z.number().int().positive(),
+       9   question: z.string().min(1),
+      10   model_answer: z.string().min(1),
+     … +21 lines (ctrl+o to expand)
+
+⏺ Write(marking-tool/lib/exam/loadExam.ts)
+  ⎿  Wrote 78 lines to marking-tool/lib/exam/loadExam.ts
+       1 import examDataRaw from "@/data/exam_data.json";
+         schemas";
+       3
+         ed.
+          bad data.
+       6 const examData = ExamDataSchema.parse(examDataRaw);
+       8 // The full set of statuses a question card can be in. Only "no_
+         submission"
+         d" are set
+         code can
+     … +81 lines (ctrl+o to expand)
+
+⏺ Now the two API routes.
+
+⏺ Write(marking-tool/app/api/submissions/route.ts)
+  ⎿  Wrote 8 lines to marking-tool/app/api/submissions/route.ts
+      1 import { NextResponse } from "next/server";
+      2 import { getSubmissionsList } from "@/lib/exam/loadExam";
+      3
+      4 // GET /api/submissions - returns one entry per student, for Scre
+        en 1.
+      5 export function GET() {
+      6   const students = getSubmissionsList();
+      7   return NextResponse.json({ students });
+      8 }
+
+⏺ Write(marking-tool/app/api/submissions/[name]/route.ts)
+  ⎿  Wrote 18 lines to marking-tool/app/api/submissions/[name]/route.ts
+       1 import { NextResponse } from "next/server";
+       2 import { getStudentSubmission } from "@/lib/exam/loadExam";
+       3
+       4 // GET /api/submissions/[name] - returns one student's full 8-qu
+         estion
+       6 export async function GET(
+       7   _request: Request,
+       8   { params }: { params: Promise<{ name: string }> }
+       9 ) {
+      10   const { name } = await params;
+     … +10 lines (ctrl+o to expand)
+
+⏺ Now the tests.
+
+⏺ Write(marking-tool/tests/loadExam.test.ts)
+  ⎿  Wrote 45 lines to marking-tool/tests/loadExam.test.ts
+       1 import { describe, expect, it } from "vitest";
+       2 import { getStudentSubmission, getSubmissionsList } from "@/lib/
+         exam/loadExam";
+       3
+       4 describe("getSubmissionsList", () => {
+       6     const students = getSubmissionsList();
+       7     expect(students).toHaveLength(4);
+       8     expect(students.map((s) => s.name)).toEqual(
+       9       expect.arrayContaining(["Aisha", "Ben", "Chen", "Diego"])
+      10     );
+     … +41 lines (ctrl+o to expand)
+
+⏺ Write(marking-tool/tests/api-submissions.test.ts)
+  ⎿  Wrote 43 lines to marking-tool/tests/api-submissions.test.ts
+       1 import { describe, expect, it } from "vitest";
+       2 import { GET as getList } from "@/app/api/submissions/route";
+       3 import { GET as getDetail } from "@/app/api/submissions/[name]/r
+         oute";
+       4
+       6   it("returns 4 students", async () => {
+       7     const response = getList();
+       8     const body = await response.json();
+       9     expect(body.students).toHaveLength(4);
+      10   });
+     … +39 lines (ctrl+o to expand)
+
+⏺ Now let's run tests, typecheck, lint, and build.
+
+⏺ Bash(npm test 2>&1 | tail -60)
+  ⎿  > marking-tool@0.1.0 test
+     > vitest run
+     … +24 lines (ctrl+o to expand)
+
+⏺ Need a vitest.config.ts with the @ alias resolved (tsconfig paths aren't
+  automatically picked up by vitest/vite).
+
+⏺ Write(marking-tool/vitest.config.ts)
+  ⎿  Wrote 10 lines to marking-tool/vitest.config.ts
+       1 import path from "node:path";
+       2 import { defineConfig } from "vitest/config";
+       3
+       4 export default defineConfig({
+       5   resolve: {
+       6     alias: {
+       7       "@": path.resolve(__dirname, "."),
+       8     },
+       9   },
+      10 });
+
+⏺ Bash(npm test 2>&1 | tail -80)
+  ⎿  > marking-tool@0.1.0 test
+     > vitest run
+     … +14 lines (ctrl+o to expand)
+
+⏺ All 7 tests pass. Now typecheck, lint, build.
+
+⏺ Bash(npx tsc --noEmit 2>&1 | tail -60)
+  ⎿  (No output)
+
+⏺ Typecheck clean.
+
+⏺ Bash(npm run lint 2>&1 | tail -60)
+  ⎿  > marking-tool@0.1.0 lint
+     > eslint
+
+⏺ Lint clean.
+
+⏺ Bash(npm run build 2>&1 | tail -80)
+  ⎿  > marking-tool@0.1.0 build
+     > next build
+     … +27 lines (ctrl+o to expand)
+
+⏺ Build succeeds. Now manual verification against the dev server.
+
+⏺ Bash((npm run dev > /tmp/data01-dev.log 2>&1 &) && sleep 4 && curl -s
+      http://localhost:3000/api/submissions && echo && curl -s
+      http://localhost:3000/api/submissions/…)
+  ⎿  {
+       "students": [
+         {
+     … +94 lines (ctrl+o to expand)
+
+⏺ Everything matches the spec exactly. Let me kill the dev server and check git
+  status before touching the journal.
+
+⏺ Bash(pkill -f "next dev" 2>/dev/null; cd
+      /Users/noah.carnegie/Documents/1910/marking-tool && git status)  ⎿  On branch developer
+     Changes not staged for commit:
+       (use "git add <file>..." to update what will be committed)
+     … +15 lines (ctrl+o to expand)
+
+⏺ Per the project's workflow, the next step is a blind review — a fresh-context
+  reviewer that sees only the ticket text, the diff, and CLAUDE.md. Let me run
+  that now.
+
+⏺ Bash(git diff -- package.json && echo "---NEW FILES---" && for f in
+      lib/validation/schemas.ts lib/exam/loadExam.ts
+      app/api/submissions/route.ts "app/api/submissions/…)
+  ⎿  diff --git a/package.json b/package.json
+     index 228cc6e..b28221f 100644
+     --- a/package.json
+     … +260 lines (ctrl+o to expand)
+
+⏺ Now spawning a fresh-context blind reviewer with only the ticket text, the
+  diff, and CLAUDE.md.
+
+⏺ Agent(Blind review of DATA-01 diff)
+  ⎿  Done (2 tool uses · 51.1k tokens · 49s)
+  (ctrl+o to expand)
+
+⏺ The reviewer flagged one real issue (premature abstraction) and two minor
+  polish items. Applying fixes.
+
+⏺ Update(marking-tool/lib/exam/loadExam.ts)
+  ⎿  Added 3 lines, removed 5 lines
+       5  // If the file is malformed, fail loudly here instead of servin
+          g bad data.
+       6  const examData = ExamDataSchema.parse(examDataRaw);
+       7  
+       8 -// The full set of statuses a question card can be in. Only "no
+         -_submission"                                                   
+       9 -// and "pending" are produced by this file. "grading" and "grad
+         -ed" are set                                                    
+      10 -// later, once grading exists, but the type lives here so later
+         - code can                                                      
+      11 -// reuse the same question shape.                              
+      12 -export type QuestionStatus = "no_submission" | "pending" | "gra
+         -ding" | "graded";                                              
+       8 +// The statuses a question can be in before any grading exists.
+       9 +// A later ticket will add "grading" and "graded" when grading 
+         +is built.                                                      
+      10 +export type QuestionStatus = "no_submission" | "pending";      
+      11  
+      12  export type QuestionWithResponse = {
+      13    questionId: string;
+
+⏺ Update(marking-tool/lib/exam/loadExam.ts)
+  ⎿  Added 2 lines
+      26  
+      27  // The fixed list of student names, read from the data instead 
+          of
+      28  // hardcoded, so this stays correct if the source file changes.
+      29 +// Recomputed on each call instead of cached: fine at this scal
+         +e (4                                                           
+      30 +// students, 8 questions), not worth the extra state for a demo
+         +.                                                              
+      31  function getStudentNames(): string[] {
+      32    const names = new Set(examData.student_responses.map((r) => r
+          .student));
+      33    return Array.from(names);
+
+⏺ Update(marking-tool/app/api/submissions/[name]/route.ts)
+  ⎿  Added 3 lines
+       3  
+       4  // GET /api/submissions/[name] - returns one student's full 8-q
+          uestion
+       5  // grid, or a clean 404 if the name doesn't match any student.
+       6 +// The only validation this input needs is "is it a known stude
+         +nt name",                                                      
+       7 +// which getStudentSubmission already checks, so there is no se
+         +parate                                                         
+       8 +// zod schema for it.                                          
+       9  export async function GET(
+      10    _request: Request,
+      11    { params }: { params: Promise<{ name: string }> }
+
+⏺ Now re-running the full verification suite after these fixes.
+
+⏺ Bash(npm test 2>&1 | tail -30 && echo "---TYPECHECK---" && npx tsc --noEmit
+      2>&1 && echo "OK" && echo "---LINT---" && npm run lint 2>&1 && echo
+      "---BUILD---" && npm…)
+  ⎿  > marking-tool@0.1.0 test
+     > vitest run
+     … +49 lines (ctrl+o to expand)
+
+⏺ All green. Now a second blind review pass to confirm the fixes land clean, per
+  the project's "fix → back to review" loop.
+
+⏺ Agent(Second blind review pass on DATA-01 fixes)
+  ⎿  Done (1 tool use · 47.8k tokens · 34s)
+  (ctrl+o to expand)
+
+⏺ Clean review. Now appending the journal entry per CLAUDE.md §12.
+
+  Read 1 file (ctrl+o to expand)
+
+⏺ Update(marking-tool/journal.md)
+  ⎿  Added 17 lines
+       6  - Rule added: none yet.
+       7  
+       8  **Not done yet:** the throwaway file (`scripts/smoke-test.mjs`)
+           is still present and already committed (`15260ab`). The ticket
+          's extra Definition of Done says it must be deleted and absent 
+          from the final diff. Blind review also still needs to run befor
+          e this ticket can be marked `done`.
+       9 +                                                               
+      10 +---                                                            
+      11 +                                                               
+      12 +## 2026-10-19 · DATA-01 · Exam data loader and read APIs       
+      13 +- What the agent did: Built `lib/validation/schemas.ts` (zod sh
+         +apes for `exam_data.json`), `lib/exam/loadExam.ts` (loads and v
+         +alidates the file once, builds the full 8-question grid from th
+         +e question list and attaches each student's response, marking a
+         + question `no_submission` if the response is missing or blank),
+         + and the two read APIs (`GET /api/submissions`, `GET /api/submi
+         +ssions/[name]`). Added 7 tests covering the list count, Diego's
+         + 6/8 split, Aisha's blank Q7, and the 404 for an unknown name. 
+         +Verified by hand against the running dev server with `curl`.   
+      14 +- Where it went wrong / what I corrected, and how I caught it: 
+         +Found that an earlier ticket (SETUP-01) never actually installe
+         +d Vitest or added a `test` script, even though it was supposed 
+         +to. I couldn't ship DATA-01's tests without it, so I asked the 
+         +human first, then installed `vitest` and added `vitest.config.t
+         +s` (needed to resolve the `@/*` path alias, which Vitest doesn'
+         +t pick up from `tsconfig.json` automatically). The blind review
+         +er (round 1) also caught that I'd written the `QuestionStatus` 
+         +type with two extra values (`"grading"`, `"graded"`) that this 
+         +ticket never produces, reaching ahead into a future ticket's sc
+         +ope. I narrowed the type back to just what this ticket produces
+         +. Round 2 review came back clean.                              
+      15 +- Reviewer rounds: 2 · round 1 findings: premature `QuestionSta
+         +tus` values (fixed), no separate validation on the `[name]` rou
+         +te param (justified with a comment instead), `getStudentNames()
+         +` recomputed on every call (justified with a comment, no cachin
+         +g added) · round 2: no findings.                               
+      16 +- Decision made (and why): A question counts as "no submission"
+         + if its response is missing OR an empty string, not just missin
+         +g — Aisha's Q7 is present in the data as `""`, and both cases m
+         +ust produce the same `no_submission` marker so invariant I4 hol
+         +ds for both.                                                   
+      17 +- Rule added: none yet, but the SUGGESTED CHANGE below should b
+         +e applied to the human-owned files so future tickets don't hit 
+         +the same Vitest gap.                                           
+      18 +                                                               
+      19 +SUGGESTED CHANGE                                               
+      20 +File:    tickets.md                                            
+      21 +Section: SETUP-01 Acceptance criteria / Test cases             
+      22 +Problem: SETUP-01 says "set up Vitest" in scope, but its accept
+         +ance criteria and test cases never actually check that `npm tes
+         +t` runs. The ticket passed review without Vitest being installe
+         +d, which blocked DATA-01 until it was added there instead.     
+      23 +Proposed text:                                                 
+      24 +Add to SETUP-01's acceptance criteria: "Given the project, when
+         + I run `npm test`, then Vitest runs (even with zero test files)
+         + and exits 0."                                                 
+      25 +Why:     Catches a missing test runner at the ticket that's sup
+         +posed to set it up, instead of at the next ticket that needs it
+         +.                                                              
+
+⏺ DATA-01 is implemented, tested, and reviewed clean. Here's the end-of-ticket
+  report per CLAUDE.md §9:
+
+  Built:        lib/validation/schemas.ts (zod shapes for exam_data.json)
+                lib/exam/loadExam.ts (loader + grid builder)
+                app/api/submissions/route.ts (list API)
+                app/api/submissions/[name]/route.ts (detail API + 404)
+                tests/loadExam.test.ts, tests/api-submissions.test.ts
+                vitest.config.ts, package.json (added vitest + test script — see
+  note below)
+
+  Verified:     npm test        -> 7/7 passed
+                npx tsc --noEmit -> clean
+                npm run lint     -> clean
+                npm run build    -> succeeds (routes listed: /,
+  /api/submissions, /api/submissions/[name])
+                Manual curl against `npm run dev`:
+                  GET /api/submissions        -> 4 students (Aisha, Ben, Chen,
+  Diego)
+                  GET /api/submissions/Diego  -> 8 questions, 6 no_submission,
+  Q2+Q6 present with correct text
+                  GET /api/submissions/Zzz    -> 404 {"error":"Student not
+  found."}
+
+  Not done:     Vitest setup itself was supposed to come from SETUP-01 but never
+  actually
+                happened there (no test script, no vitest dependency). I flagged
+  this to you
+                before touching it, you said do it here, so I added it as part
+  of DATA-01.
+                Left a SUGGESTED CHANGE in journal.md asking for a SETUP-01
+  acceptance
+                criterion so this doesn't slip through again.
+
+  Check manually: run `npm run dev` yourself and hit the two endpoints once to
+  eyeball the
+                real JSON shape before UI-01 builds on it.
+
+  Risks:        None found. Blind review ran twice (round 1 found 3 minor issues
+  — a
+                premature QuestionStatus type reaching into grading's scope, and
+  two
+                judgment calls on input validation and recompute cost — all
+  fixed or
+                justified; round 2 came back clean).
+
+  Ticket status per the workflow: ready for you to mark done once you've
+  spot-checked the acceptance criteria yourself (the human-verification step is
+  yours, not mine).
