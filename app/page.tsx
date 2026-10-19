@@ -106,7 +106,7 @@ export default function Home() {
                 background: "var(--card)",
                 border: "1px solid var(--border)",
                 borderRadius: "10px",
-                boxShadow: "0 1px 2px rgba(78,52,30,0.05), 0 10px 26px rgba(78,52,30,0.05)",
+                boxShadow: "0 1px 2px rgba(16,24,40,0.04), 0 10px 26px rgba(16,24,40,0.06)",
                 overflow: "hidden",
               }}
             >
@@ -153,7 +153,7 @@ export default function Home() {
                       gap: "16px",
                       padding: "18px 22px",
                       cursor: "pointer",
-                      borderBottom: "1px solid rgba(42,35,32,0.05)",
+                      borderBottom: "1px solid rgba(16,24,40,0.05)",
                       color: "var(--foreground)",
                       transition: "background 0.15s ease",
                     }}
@@ -258,7 +258,7 @@ function StatusPill({ marked }: { marked: boolean }) {
         fontWeight: 700,
         color: "var(--rubric-text)",
         background: "transparent",
-        border: "1px solid rgba(42,35,32,0.14)",
+        border: "1px solid rgba(16,24,40,0.14)",
         padding: "4px 11px",
         borderRadius: "6px",
       }}

@@ -171,9 +171,9 @@ function StudentPageContent() {
             <div
               className="fixed inset-x-0 bottom-0 px-4 sm:px-6"
               style={{
-                background: "rgba(255,250,243,0.92)",
+                background: "rgba(247,248,250,0.92)",
                 backdropFilter: "blur(8px)",
-                borderTop: "1px solid rgba(42,35,32,0.07)",
+                borderTop: "1px solid rgba(16,24,40,0.07)",
                 padding: "14px 24px",
               }}
             >
@@ -196,7 +196,7 @@ function StudentPageContent() {
                         {Math.round((gradingProgress.done / gradingProgress.total) * 100)}%
                       </span>
                     </div>
-                    <div style={{ height: "9px", background: "#E4E1DB", borderRadius: "4px", overflow: "hidden" }}>
+                    <div style={{ height: "9px", background: "#E5E7EB", borderRadius: "4px", overflow: "hidden" }}>
                       <div
                         style={{
                           height: "100%",
@@ -219,7 +219,7 @@ function StudentPageContent() {
                       className="hover:bg-[var(--hover-bg)]"
                       style={{
                         background: "var(--card)",
-                        border: "1px solid rgba(42,35,32,0.12)",
+                        border: "1px solid rgba(16,24,40,0.12)",
                         color: "var(--foreground)",
                         fontSize: "15px",
                         fontWeight: 700,

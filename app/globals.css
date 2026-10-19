@@ -1,28 +1,27 @@
 @import "tailwindcss";
 
 /*
-  Theme tokens from UI-02-final-ui.md §1 — the exact colours from the
-  design mockup (public/Maths Exam Marking Tool.html). Do not invent new
-  colours; every value the app needs lives here.
+  Theme tokens re-themed per theme-restyle-ticket.md (beige to light grey).
+  Do not invent new colours; every value the app needs lives here.
 */
 :root {
   color-scheme: light;
-  --background: #fffaf3;
-  --card: #fff2db;
-  --card-strong: #ffe5bf;
-  --foreground: #2a2320;
-  --muted: #9a8c7c;
-  --muted-strong: #b49a80;
-  --eyebrow: #b07a4a;
-  --rubric-text: #a3917d;
-  --response-text: #3a322c;
-  --border: rgba(42, 35, 32, 0.06);
-  --hover-bg: #eceae6;
+  --background: #f7f8fa;
+  --card: #ffffff;
+  --card-strong: #e5e7eb;
+  --foreground: #1a1d24;
+  --muted: #6b7280;
+  --muted-strong: #8a93a3;
+  --eyebrow: #6b7280;
+  --rubric-text: #4b5563;
+  --response-text: #374151;
+  --border: #e7e9ee;
+  --hover-bg: #f0f2f5;
   --accent: #d11a33;
   --accent-hover: #b8142c;
   --link-hover: #a8142a;
-  --dash: #c9b59c;
-  --max-text: #bcae9c;
+  --dash: #aeb4bf;
+  --max-text: #9ca3af;
   --warning-bg: #fbeccb;
   --warning-fg: #8a6400;
   --warning-border: rgba(138, 100, 0, 0.28);

@@ -51,7 +51,7 @@ export function AdjustControl({
             fontWeight: 600,
             color: "var(--foreground)",
             background: "var(--background)",
-            border: "1px solid rgba(42,35,32,0.12)",
+            border: "1px solid rgba(16,24,40,0.12)",
             borderRadius: "6px",
           }}
         />
@@ -77,7 +77,7 @@ export function AdjustControl({
           style={{
             background: "var(--card)",
             color: "var(--foreground)",
-            border: "1px solid rgba(42,35,32,0.12)",
+            border: "1px solid rgba(16,24,40,0.12)",
             fontSize: "13px",
             fontWeight: 700,
             padding: "6px 12px",

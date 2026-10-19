@@ -45,12 +45,12 @@ export function QuestionCard({
   return (
     <li
       style={{
-        background: isNoSubmission ? "#F6EEE0" : "var(--card)",
+        background: isNoSubmission ? "#F0F2F5" : "var(--card)",
         border: needsReview ? `1px solid ${"var(--warning-border)"}` : "1px solid var(--border)",
         borderRadius: "10px",
         padding: "22px",
         marginBottom: "14px",
-        boxShadow: "0 1px 2px rgba(78,52,30,0.04), 0 6px 18px rgba(78,52,30,0.045)",
+        boxShadow: "0 1px 2px rgba(16,24,40,0.03), 0 6px 18px rgba(16,24,40,0.05)",
         opacity: isNoSubmission ? 0.72 : 1,
         transition: "opacity 0.3s ease",
       }}
@@ -99,7 +99,7 @@ export function QuestionCard({
                   fontSize: "12px",
                   fontWeight: 700,
                   color: "var(--muted)",
-                  background: "#ECE4D8",
+                  background: "#E7E9EE",
                   padding: "3px 10px",
                   borderRadius: "4px",
                 }}
@@ -141,7 +141,7 @@ export function QuestionCard({
               fontSize: "16.5px",
               fontWeight: 700,
               lineHeight: 1.4,
-              color: isNoSubmission ? "#8E8172" : "var(--foreground)",
+              color: isNoSubmission ? "#6B7280" : "var(--foreground)",
             }}
           >
             {question.question}
@@ -169,9 +169,9 @@ export function QuestionCard({
           style={{
             fontSize: "15px",
             lineHeight: 1.55,
-            color: isNoSubmission ? "#B4A590" : "var(--response-text)",
-            background: isNoSubmission ? "transparent" : "#FFFAF3",
-            border: "1px solid rgba(42,35,32,0.06)",
+            color: isNoSubmission ? "#9CA3AF" : "var(--response-text)",
+            background: isNoSubmission ? "transparent" : "#F3F4F6",
+            border: "1px solid #E7E9EE",
             borderRadius: "8px",
             padding: "13px 16px",
             fontStyle: isNoSubmission ? "italic" : "normal",
@@ -190,8 +190,8 @@ export function QuestionCard({
               fontSize: "14.5px",
               lineHeight: 1.55,
               color: "var(--response-text)",
-              background: "#FFF7EA",
-              border: "1px solid rgba(42,35,32,0.06)",
+              background: "#EEF2F7",
+              border: "1px solid #E7E9EE",
               borderRadius: "8px",
               padding: "13px 16px",
             }}
@@ -235,7 +235,7 @@ function ControlButton({ onClick, children }: { onClick: () => void; children: s
       style={{
         background: "var(--card)",
         color: "var(--foreground)",
-        border: "1px solid rgba(42,35,32,0.12)",
+        border: "1px solid rgba(16,24,40,0.12)",
         fontSize: "13px",
         fontWeight: 700,
         padding: "6px 12px",
@@ -279,8 +279,8 @@ function MarkBox({
         gap: "1px",
         minWidth: "74px",
         padding: "10px 6px",
-        background: noSub ? "#EFE7D9" : "#FFFAF3",
-        border: "1px solid rgba(42,35,32,0.07)",
+        background: noSub ? "#ECEEF2" : "#F7F8FA",
+        border: "1px solid rgba(16,24,40,0.07)",
         borderRadius: "8px",
         flexShrink: 0,
         animation: showMark && !noSub ? "mark-in 0.4s ease" : undefined,
