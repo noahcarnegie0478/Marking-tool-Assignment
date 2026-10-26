@@ -55,6 +55,13 @@ ${response}
 
 Mark the response against the rubric. Give partial credit for correct method even if the final answer is wrong. If the working contradicts the final answer, or you are unsure how many marks the response earns, set needsReview to true.
 
-Reply with only JSON, no other text, in exactly this shape:
-{"mark": <integer from 0 to ${maxMarks}>, "feedback": "<one short sentence>", "needsReview": <true or false>}`;
+Reply with a single JSON object and NOTHING before or after it:
+{
+  "reasoning": "<your marking thinking, at most 2 short sentences>",
+  "mark": <whole number from 0 to ${maxMarks}>,
+  "feedback": "<one or two sentences for the student>",
+  "needsReview": <true or false>
+}
+
+Do not write anything before or after the JSON object.`;
 }

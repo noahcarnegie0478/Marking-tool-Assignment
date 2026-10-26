@@ -8,7 +8,7 @@ import { getStudentSubmission } from "@/lib/exam/loadExam";
 // zod schema for it.
 export async function GET(
   _request: Request,
-  { params }: { params: Promise<{ name: string }> }
+  { params }: { params: Promise<{ name: string }> },
 ) {
   const { name } = await params;
   const submission = getStudentSubmission(name);

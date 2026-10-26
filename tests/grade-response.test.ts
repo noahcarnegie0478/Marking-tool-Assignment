@@ -257,6 +257,110 @@ describe("gradeResponse: failure paths", () => {
   });
 });
 
+// FIX-01: on harder questions the live model wrote prose before the JSON,
+// and parsing the whole reply threw a good mark away. The mocks above
+// always return clean JSON, so they never caught it. These feed raw
+// strings with text around the JSON object.
+describe("gradeResponse: prose around the JSON", () => {
+  const SAFE_FALLBACK = {
+    mark: 0,
+    feedback: "Could not grade this response automatically.",
+    needsReview: true,
+  };
+
+  it("prose first, then a valid JSON object -> parsed, real mark, not the fallback", async () => {
+    mockedCallMarkingModel.mockResolvedValueOnce(
+      "The student gives x = 4, y = 3 with no working. So the method mark can't be awarded.\n\n" +
+        '{"mark": 2, "feedback": "Correct values, no method shown.", "needsReview": true}'
+    );
+
+    const result = await gradeResponse(request({ maxMarks: 3 }));
+
+    expect(result).toEqual({ mark: 2, feedback: "Correct values, no method shown.", needsReview: true });
+  });
+
+  it("prose before AND after the JSON object -> parsed", async () => {
+    mockedCallMarkingModel.mockResolvedValueOnce(
+      "Checking the working first.\n" +
+        '{"mark": 1, "feedback": "Method right, arithmetic slip.", "needsReview": false}\n' +
+        "That is my final mark."
+    );
+
+    const result = await gradeResponse(request({ maxMarks: 3 }));
+
+    expect(result).toEqual({ mark: 1, feedback: "Method right, arithmetic slip.", needsReview: false });
+  });
+
+  it("JSON wrapped in a markdown code fence -> still parsed", async () => {
+    mockedCallMarkingModel.mockResolvedValueOnce(
+      '```json\n{"mark": 3, "feedback": "All correct.", "needsReview": false}\n```'
+    );
+
+    const result = await gradeResponse(request({ maxMarks: 3 }));
+
+    expect(result).toEqual({ mark: 3, feedback: "All correct.", needsReview: false });
+  });
+
+  it("a reply with a reasoning field -> mark/feedback/needsReview returned, reasoning NOT returned", async () => {
+    mockReply({
+      reasoning: "Valid elimination, x correct, y wrong.",
+      mark: 2,
+      feedback: "Good method, check your value of y.",
+      needsReview: false,
+    });
+
+    const result = await gradeResponse(request({ maxMarks: 3 }));
+
+    // toEqual fails on any extra key, so this also proves reasoning is stripped.
+    expect(result).toEqual({ mark: 2, feedback: "Good method, check your value of y.", needsReview: false });
+    expect(result).not.toHaveProperty("reasoning");
+  });
+
+  it("a reply with no {...} at all -> safe fallback (I3)", async () => {
+    mockedCallMarkingModel.mockResolvedValueOnce("I think this deserves 2 marks because the method is right.");
+
+    const result = await gradeResponse(request({ maxMarks: 3 }));
+
+    expect(result).toEqual(SAFE_FALLBACK);
+  });
+
+  it("a {...} that is not valid JSON -> safe fallback (I3)", async () => {
+    mockedCallMarkingModel.mockResolvedValueOnce('Here is my mark: {mark: 2, feedback: "ok", needsReview: false}');
+
+    const result = await gradeResponse(request({ maxMarks: 3 }));
+
+    expect(result).toEqual(SAFE_FALLBACK);
+  });
+
+  it("a '}' that comes before any '{' -> safe fallback (I3)", async () => {
+    mockedCallMarkingModel.mockResolvedValueOnce("} mark is 2 {");
+
+    const result = await gradeResponse(request({ maxMarks: 3 }));
+
+    expect(result).toEqual(SAFE_FALLBACK);
+  });
+
+  it('"reasoning": null -> still parsed, not the fallback', async () => {
+    mockReply({ reasoning: null, mark: 2, feedback: "Mostly right.", needsReview: false });
+
+    const result = await gradeResponse(request({ maxMarks: 3 }));
+
+    expect(result).toEqual({ mark: 2, feedback: "Mostly right.", needsReview: false });
+  });
+
+  it("in production, reasoning is never logged", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    mockReply({ reasoning: "Student wrote x = 4.", mark: 1, feedback: "Partly right.", needsReview: false });
+
+    await gradeResponse(request({ maxMarks: 3 }));
+
+    expect(logSpy).not.toHaveBeenCalled();
+    logSpy.mockRestore();
+    vi.unstubAllEnvs();
+  });
+});
+
 describe("gradeResponse: security", () => {
   it("wraps an injected instruction as data, and marks the maths when the model correctly ignores it", async () => {
     // As a real model should (confirmed by manual testing against the

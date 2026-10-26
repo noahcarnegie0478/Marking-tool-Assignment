@@ -50,5 +50,16 @@ export const GradeOutputSchema = z.object({
   needsReview: z.boolean(),
 });
 
+// What the MODEL returns. Same as GradeOutput plus an optional, short
+// reasoning field that we log for debugging and never send to the client.
+// No max length on reasoning on purpose: a hard cap would reject a long
+// reasoning and send a good mark to the safe fallback. Brevity is asked
+// for in the prompt instead. nullish (not just optional) so a model that
+// sends "reasoning": null doesn't throw a good mark away either.
+export const ModelReplySchema = GradeOutputSchema.extend({
+  reasoning: z.string().nullish(),
+});
+
 export type GradeRequest = z.infer<typeof GradeRequestSchema>;
 export type GradeOutput = z.infer<typeof GradeOutputSchema>;
+export type ModelReply = z.infer<typeof ModelReplySchema>;

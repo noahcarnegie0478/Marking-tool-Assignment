@@ -58,4 +58,10 @@ describe("buildMarkingPrompt", () => {
     expect(prompt).toContain('"feedback"');
     expect(prompt).toContain('"needsReview"');
   });
+
+  it("gives the model a reasoning field inside the JSON and asks for nothing outside it", () => {
+    const prompt = buildMarkingPrompt(baseInput);
+    expect(prompt).toContain('"reasoning"');
+    expect(prompt).toContain("Do not write anything before or after the JSON object.");
+  });
 });

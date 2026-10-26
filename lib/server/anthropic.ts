@@ -3,10 +3,10 @@ import Anthropic from "@anthropic-ai/sdk";
 // The only file in this project that touches the Anthropic SDK or the
 // API key. Nothing else should import "@anthropic-ai/sdk" directly.
 
-// The reply is one short JSON object (a mark, a one-sentence feedback,
-// and a boolean), so 500 tokens is comfortably more than it ever needs
-// without leaving room for a long, costly reply.
-const MAX_REPLY_TOKENS = 500;
+// The reply is one short JSON object (a short reasoning, a mark, one or
+// two sentences of feedback, and a boolean). 1024 tokens leaves room for
+// the reasoning field (was 500) without allowing a long, costly reply.
+const MAX_REPLY_TOKENS = 1024;
 
 // One client per server process, built lazily so importing this module
 // never fails (useful in tests that mock this file entirely and never
@@ -42,7 +42,7 @@ export async function callMarkingModel(prompt: string): Promise<string> {
     messages: [{ role: "user", content: prompt }],
   });
 
-  const textBlock = message.content.find((block) => block.type === "text");
+  const textBlock = message.content.find(block => block.type === "text");
   if (!textBlock || textBlock.type !== "text") {
     throw new Error("Model reply had no text content.");
   }

@@ -131,6 +131,8 @@ export default function Home() {
                 <div style={{ width: "22px" }} />
               </div>
 
+
+                {/* result state is being use here*/}
               {students.map(({ name }) => {
                 const status = getStatus(results, name);
                 const total = getTotal(results, name);
